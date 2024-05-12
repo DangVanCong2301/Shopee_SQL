@@ -23,6 +23,14 @@ GO
 ALTER TABLE tbl_Users ADD CONSTRAINT FK_iRoleID FOREIGN KEY (FK_iRoleID) REFERENCES tbl_Roles
 ALTER TABLE tbl_Users ADD sPassword NVARCHAR(100)
 
+-- Xoá cột: https://freetuts.net/xoa-column-trong-sql-server-1589.html
+exec sp_rename 'tbl_Users.bGender', 'iGender', 'COLUMN';
+ALTER TABLE tbl_Users ADD sUserName NVARCHAR(100)
+ALTER TABLE tbl_Users ADD sImageProfile NVARCHAR(100)
+ALTER TABLE tbl_Users
+ALTER COLUMN bGender INT
+GO
+
 ------------------------- TẠO BẢNG DANH MỤC --------------------------
 CREATE TABLE tbl_Categories (
     PK_iCategoryID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,

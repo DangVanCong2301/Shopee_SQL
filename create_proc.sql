@@ -248,7 +248,7 @@ SELECT * FROM tbl_Users
 GO
 ------------------------------------------------------
 
--- Thủ tục đăng nhập tài khoản---
+--- Thủ tục đăng nhập tài khoản---
 ALTER PROC sp_LoginEmailAndPassword
     @sEmail NVARCHAR(100),
     @sPassword NVARCHAR(100)
@@ -276,6 +276,33 @@ BEGIN
     UPDATE tbl_Users set FK_iRoleID = @FK_iRoleID WHERE PK_iUserID = @PK_iUserID
 END
 EXEC sp_UpdateUser 10, 2
+GO
+
+--- Thủ tục lấy thông tin tài khoản bằng mã ---
+CREATE PROC sp_GetUserInfoByID
+    @PK_iUserID INT
+AS
+BEGIN
+    SELECT * FROM tbl_Users WHERE PK_iUserID = @PK_iUserID
+END
+EXEC sp_GetUserInfoByID 10
+GO
+------------------------------------------------------
+
+--- Thủ tục cập nhật thông tin hồ sơ ---
+CREATE PROC sp_UpdateProfile
+    @PK_iUserID INT,
+    @sUserName NVARCHAR(100),
+    @sFullName NVARCHAR(100),
+    @sEmail NVARCHAR(100),
+    @iGender INT,
+    @DateBirth DATETIME,
+    @sImageProfile NVARCHAR(100)
+AS
+BEGIN
+    UPDATE tbl_Users SET sUserName = @sUserName, sFullName = @sFullName, sEmail = @sEmail, iGender = @iGender, dDateBirth = @DateBirth, sImageProfile = @sImageProfile WHERE PK_iUserID = @PK_iUserID
+END
+
 GO
 ------------------------------------------------------
 -------------------------------------------------------- GIỎ HÀNG -------------------------------------------------------------------------
