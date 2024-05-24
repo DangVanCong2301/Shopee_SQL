@@ -31,6 +31,13 @@ ALTER TABLE tbl_Users
 ALTER COLUMN bGender INT
 GO
 
+------------------------- TẠO BẢNG CỬA HÀNG --------------------------
+CREATE TABLE tbl_Stores (
+    PK_iStoreID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    sStoreName NVARCHAR(100)
+)
+GO
+
 ------------------------- TẠO BẢNG DANH MỤC --------------------------
 CREATE TABLE tbl_Categories (
     PK_iCategoryID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
@@ -43,6 +50,8 @@ exec sp_rename 'tbl_Categories.sName', 'sCategoryName', 'COLUMN';
 ALTER TABLE tbl_Categories
 ALTER COLUMN iIsVisible INT
 ALTER TABLE tbl_Categories ADD sCategoryImage NVARCHAR(100)
+ALTER TABLE tbl_Categories ADD FK_iStoreID INT
+ALTER TABLE tbl_Categories ADD CONSTRAINT FK_iStore FOREIGN KEY (FK_iStoreID) REFERENCES tbl_Stores
 
 ------------------------- TẠO BẢNG SẢN PHẨM --------------------------
 CREATE TABLE tbl_Products (
