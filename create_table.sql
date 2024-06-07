@@ -38,6 +38,9 @@ CREATE TABLE tbl_Stores (
 )
 GO
 
+ALTER TABLE tbl_Stores ADD sImageAvatar NVARCHAR(100)
+ALTER TABLE tbl_Stores ADD sImageLogo NVARCHAR(100)
+
 ------------------------- TẠO BẢNG DANH MỤC --------------------------
 CREATE TABLE tbl_Categories (
     PK_iCategoryID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
