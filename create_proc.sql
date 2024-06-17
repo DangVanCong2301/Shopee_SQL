@@ -225,6 +225,20 @@ SELECT * FROM tbl_Products
 EXEC sp_UpdateProduct 4, 0
 GO
 
+-------------------------------------------------------- YÊU THÍCH SẢN PHẨM -------------------------------------------------------------------------
+-- Thủ tục tạo danh sách sản phẩm yêu thích --
+CREATE PROC sp_SelectProductFavorites
+    @FK_iUserID INT
+AS
+BEGIN
+    SELECT PK_iFavoriteID, FK_iProductID, FK_iUserID, bFavorite
+    FROM tbl_Favorites
+    INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_Favorites.FK_iProductID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = @FK_iUserID
+END
+EXEC sp_SelectProductFavorites 10
+GO
+
 -------------------------------------------------------- TÀI KHOẢN -------------------------------------------------------------------------
 -- Thủ tục tạo tài khoản--
 ALTER PROC sp_InsertUser

@@ -14,6 +14,7 @@ INSERT INTO tbl_Categories (sCategoryName, sCategoryDescription, iIsVisible, sCa
 INSERT INTO tbl_Categories (sCategoryName, sCategoryDescription, iIsVisible, sCategoryImage) VALUES (N'Sạc máy tính', N'Các loại sạc máy tính', 1, 'sạc máy tính.jpg')
 SELECT * FROM tbl_Categories
 
+------- Thêm sản phẩm -----------
 set dateformat dmy INSERT INTO tbl_Products (FK_iCategoryID, sProductName, iQuantity, sProductDescription, sImageUrl, dPrice, iIsVisible, dCreateTime, dUpdateTime, dDeleteTime) VALUES (1, N'Tai nghe Xiaomi Mi Basic', 20, N'Tai nghe Xiaomi Mi Basic: vẻ đẹp tinh tế, chất âm tinh khiết', 'tai_nghe_eport.jpg', 1200000, 1, '23/1/2024', NULL, NULL)
 INSERT INTO tbl_Products (FK_iCategoryID, sProductName, iQuantity, sProductDescription, sImageUrl, dPrice, iIsVisible, dCreateTime, dUpdateTime, dDeleteTime) VALUES (1, N'Tai nghe eport', 20, N'Tai nghe gaming giá rẻ DareU EH416 RGB với tông màu chủ đạo là đen bóng huyền bí, cá tính cùng với hai củ tai to và dày mang lại cảm giác mạnh mẽ nhưng cũng không kém phần sang trọng. Trọng lượng của tai nghe khá nhẹ chỉ 450gr dù dáng vẻ hơi cồng kềnh, nên không thích hợp lắm khi mang ra ngoài đường.', 'tai_nghe_eport.jpg', 1500000, 1, '23/1/2024', NULL, NULL)
 INSERT INTO tbl_Products (FK_iCategoryID, sProductName, iQuantity, sProductDescription, sImageUrl, dPrice, iIsVisible, dCreateTime, dUpdateTime, dDeleteTime) VALUES (1, N'TAI NGHE G-Net GNET G09 7.1/3.5 LED RGB', 20, N'Ốp tai được làm bằng da ôm kín vành tai khả năng chống ồn rất cao, hạn chế không cho âm thanh phát ra ngoài, không gây đau tai
@@ -28,11 +29,17 @@ INSERT INTO tbl_Products (FK_iCategoryID, sProductName, iQuantity, sProductDescr
 INSERT INTO tbl_Products (FK_iCategoryID, sProductName, iQuantity, sProductDescription, sImageUrl, dPrice, iIsVisible, dCreateTime, dUpdateTime, dDeleteTime) VALUES (3, N'Loa Bluetooth Tronsmart Element Force Mega 40W', 20, N'Tronsmart là thương hiệu đã ra mắt trên thị trường hơn chục năm nay và trở thành cái tên quen thuộc với cộng đồng công nghệ trên toàn thế giới nói chung, và Việt Nam chúng ta nói riêng. Họ đã sản xuất và giới thiệu rất nhiều sản phẩm thành công về đa lĩnh vực, nổi bật là ngành công nghệ âm thanh . Đặc biệt , Tronsmart đã cung cấp nhiều sản phẩm loa bluetooth độc đáo, được người dùng đánh giá khá cao và tin dùng, và Loa Bluetooth Tronsmart Element Force Mega 40W là siêu phẩm mà nhà Tronsmart vừa mới cho ra mắt trong thời gian gần đây. Nó không chỉ có công suất đặc biệt lớn mà còn được trang bị nhiều công nghệ tiên tiến, hiện đại.', 'loa_bluetooth.jpg', 1200000, 1, '23/1/2024', NULL, NULL)
 SELECT * FROM tbl_Products
 
+------- Thêm yêu thích sản phẩm -----------
+SELECT * FROM tbl_Favorites
+INSERT INTO tbl_Favorites (FK_iProductID, FK_iUserID, bFavorite) VALUES (8, 10, 1)
+DELETE tbl_Favorites WHERE PK_iFavoriteID = 4
+
+------- Thêm quyền đăng nhập -----------
 SELECT * FROM tbl_Roles
 INSERT INTO tbl_Roles (sName) VALUES ('user')
 INSERT INTO tbl_Roles (sName) VALUES ('admin')
 
--------Thêm người dùng-----------
+------- Thêm người dùng -----------
 SELECT * FROM tbl_Users
 INSERT INTO tbl_Users (FK_iRoleID, sName, sEmail, sPassword) VALUES (1, N'Công Đặng', 'cong@gmail.com', '12345678')
 ------------------------

@@ -76,6 +76,21 @@ ALTER TABLE tbl_Products ADD CONSTRAINT FK_iCategoryID FOREIGN KEY (FK_iCategory
 ALTER TABLE tbl_Products
 ALTER COLUMN iIsVisible INT
 
+------------------------- TẠO BẢNG YÊU THÍCH SẢN PHẨM --------------------------
+CREATE TABLE tbl_Favorites (
+    PK_iFavoriteID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    FK_iProductID INT,
+    FK_iUserID INT,
+    bFavorite BIT
+)
+GO
+ALTER TABLE tbl_Favorites ADD CONSTRAINT FK_Product_Favorite FOREIGN KEY (FK_iProductID) REFERENCES tbl_Products
+ALTER TABLE tbl_Favorites ADD CONSTRAINT FK_User_Favorite FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users
+--Thay đổi giá trị cột trong một bảng
+ALTER TABLE tbl_Favorites
+ALTER COLUMN bFavorite INT
+
+------------------------- TẠO BẢNG BÌNH LUẬN --------------------------
 CREATE TABLE tbl_Reviews (
     PK_iReviewID INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
     FK_iUserID INT,
@@ -90,6 +105,7 @@ GO
 ALTER TABLE tbl_Reviews ADD CONSTRAINT FK_iProductID FOREIGN KEY (FK_iProductID) REFERENCES tbl_Products,
 CONSTRAINT FK_iUserID FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users
 
+------------------------- TẠO BẢNG GIỎ HÀNG --------------------------
 CREATE TABLE tbl_Carts (
     PK_iCartID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
     dUpdateTime DATETIME
