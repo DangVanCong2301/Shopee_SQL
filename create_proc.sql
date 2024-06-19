@@ -1,12 +1,48 @@
 -------------------------------------------------------- CỬA HÀNG -------------------------------------------------------------------------
+-- Thủ tục lấy cửa hàng --
 CREATE PROC sp_SelelteStores
 AS
 BEGIN
     SELECT * FROM tbl_Stores
 END
+EXEC sp_SelelteStores
 GO
 
-SELECT * from tbl_Stores
+-- Thủ tục lấy cửa hàng theo mã cửa hàng --
+CREATE PROC sp_GetShopByID
+    @PK_iShopID INT
+AS
+BEGIN
+    SELECT * FROM tbl_Stores WHERE PK_iStoreID = @PK_iShopID
+END
+EXEC sp_GetShopByID 1
+GO
+
+-- Thủ tục lấy banner cửa hàng theo mã cửa hàng --
+SELECT * FROM tbl_Stores INNER JOIN tbl_BannerShops ON tbl_Stores.PK_iStoreID = tbl_BannerShops.FK_iShopID
+GO
+
+-- Thủ tục lấy top 3 sản phẩm bán chạy của cửa hàng theo mã cửa hàng --
+CREATE PROC sp_GetTopSellingProductsShop
+    @PK_iShopID INT
+AS
+BEGIN
+    SELECT TOP(3) 
+        PK_iProductID, 
+        FK_iCategoryID, 
+        sCategoryName, 
+        sProductName, 
+        sImageUrl, 
+        sProductDescription, 
+        dPrice, 
+        iQuantity, 
+        tbl_Products.iIsVisible as 'iIsVisible' 
+    FROM tbl_Stores 
+    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID 
+    WHERE tbl_Stores.PK_iStoreID = @PK_iShopID
+END
+EXEC sp_GetTopSellingProductsShop 2
 GO
 -------------------------------------------------------- THỂ LOẠI -------------------------------------------------------------------------
 -- Tham khảo: https://timoday.edu.vn/bai-3-cau-lenh-truy-van-du-lieu/
