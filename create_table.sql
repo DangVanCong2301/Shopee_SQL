@@ -40,6 +40,18 @@ GO
 
 ALTER TABLE tbl_Stores ADD sImageAvatar NVARCHAR(100)
 ALTER TABLE tbl_Stores ADD sImageLogo NVARCHAR(100)
+ALTER TABLE tbl_Stores ADD sImageBackground NVARCHAR(100)
+ALTER TABLE tbl_Stores ADD sDesc NVARCHAR(MAX)
+
+------------------------- TẠO BẢNG BANNER CỬA HÀNG --------------------------
+CREATE TABLE tbl_BannerShops (
+    PK_iBannerShopID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    FK_iShopID INT,
+    sImageBanner NVARCHAR(100)
+)
+GO
+ALTER TABLE tbl_BannerShops ADD CONSTRAINT FK_iShopID FOREIGN KEY (FK_iShopID) REFERENCES tbl_Stores
+EXEC sp_rename 'tbl_BannerShops', 'tbl_Banners_Shops' -- Đổi tên bảng tbl_BannerShops thành tbl_Banners_Shops (Tương tự với đổi tên thủ tục lưu)
 
 ------------------------- TẠO BẢNG DANH MỤC --------------------------
 CREATE TABLE tbl_Categories (
@@ -55,6 +67,11 @@ ALTER COLUMN iIsVisible INT
 ALTER TABLE tbl_Categories ADD sCategoryImage NVARCHAR(100)
 ALTER TABLE tbl_Categories ADD FK_iStoreID INT
 ALTER TABLE tbl_Categories ADD CONSTRAINT FK_iStore FOREIGN KEY (FK_iStoreID) REFERENCES tbl_Stores
+-- Xoá cột khoá ngoại FK_iStore
+ALTER TABLE tbl_Categories DROP CONSTRAINT FK_iStore -- Xoá tên khoá ngoại
+ALTER TABLE tbl_Categories DROP COLUMN FK_iStoreID -- Xoá tên cột 
+
+-- Đổi tên bảng: https://freetuts.net/doi-ten-table-trong-sql-server-1590.html
 
 ------------------------- TẠO BẢNG SẢN PHẨM --------------------------
 CREATE TABLE tbl_Products (
