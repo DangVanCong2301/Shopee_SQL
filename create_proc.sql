@@ -23,7 +23,7 @@ SELECT * FROM tbl_Stores INNER JOIN tbl_BannerShops ON tbl_Stores.PK_iStoreID = 
 GO
 
 -- Thủ tục lấy top 3 sản phẩm bán chạy của cửa hàng theo mã cửa hàng --
-CREATE PROC sp_GetTopSellingProductsShop
+ALTER PROC sp_GetTop3SellingProductsShop
     @PK_iShopID INT
 AS
 BEGIN
@@ -43,6 +43,54 @@ BEGIN
     WHERE tbl_Stores.PK_iStoreID = @PK_iShopID
 END
 EXEC sp_GetTopSellingProductsShop 2
+-- Đổi tên
+EXEC sp_rename 'sp_GetTopSellingProductsShop', 'sp_GetTop3SellingProductsShop'
+GO
+
+-- Thủ tục lấy top 10 sản phẩm bán chạy của cửa hàng theo mã cửa hàng --
+CREATE PROC sp_GetTop10SellingProductsShop
+    @PK_iShopID INT
+AS
+BEGIN
+    SELECT TOP(10) 
+        PK_iProductID, 
+        FK_iCategoryID, 
+        sCategoryName, 
+        sProductName, 
+        sImageUrl, 
+        sProductDescription, 
+        dPrice, 
+        iQuantity, 
+        tbl_Products.iIsVisible as 'iIsVisible' 
+    FROM tbl_Stores 
+    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID 
+    WHERE tbl_Stores.PK_iStoreID = @PK_iShopID
+END
+EXEC sp_GetTop10SellingProductsShop 2
+GO
+
+-- Thủ tục lấy top 10 sản phẩm giá tốt (tiền tăng dần) của cửa hàng theo mã cửa hàng --
+CREATE PROC sp_GetTop10GoodPriceProductsShop
+    @PK_iShopID INT
+AS
+BEGIN
+    SELECT TOP(10) 
+        PK_iProductID, 
+        FK_iCategoryID, 
+        sCategoryName, 
+        sProductName, 
+        sImageUrl, 
+        sProductDescription, 
+        dPrice, 
+        iQuantity, 
+        tbl_Products.iIsVisible as 'iIsVisible' 
+    FROM tbl_Stores 
+    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID 
+    WHERE tbl_Stores.PK_iStoreID = @PK_iShopID ORDER BY (dPrice) ASC
+END
+EXEC sp_GetTop10GoodPriceProductsShop 2
 GO
 -------------------------------------------------------- THỂ LOẠI -------------------------------------------------------------------------
 -- Tham khảo: https://timoday.edu.vn/bai-3-cau-lenh-truy-van-du-lieu/
