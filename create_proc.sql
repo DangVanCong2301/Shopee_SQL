@@ -92,6 +92,35 @@ BEGIN
 END
 EXEC sp_GetTop10GoodPriceProductsShop 2
 GO
+
+-- Thủ tục lấy các danh mục của cửa hàng theo mã cửa hàng --
+CREATE PROC sp_GetCategoriesByShopID
+    @PK_iShopID INT
+AS
+BEGIN
+    SELECT PK_iCategoryID, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount', sCategoryDescription
+    FROM tbl_Stores 
+    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Products ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    WHERE PK_iStoreID = @PK_iShopID
+    GROUP BY PK_iCategoryID, sCategoryName, sCategoryImage, sCategoryDescription 
+END
+EXEC sp_GetCategoriesByShopID 2
+GO
+
+-- Thủ tục lấy các sản phẩm của cửa hàng theo mã cửa hàng --
+CREATE PROC sp_GetProductsByShopID
+    @PK_iShopID INT
+AS
+BEGIN
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' 
+    FROM tbl_Stores
+    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    WHERE PK_iStoreID = @PK_iShopID
+END
+EXEC sp_GetProductsByShopID 2
+GO
 -------------------------------------------------------- THỂ LOẠI -------------------------------------------------------------------------
 -- Tham khảo: https://timoday.edu.vn/bai-3-cau-lenh-truy-van-du-lieu/
 -- Thủ tục lấy danh mục--
@@ -106,12 +135,12 @@ EXEC sp_SelectCategories
 SELECT * FROM tbl_Categories
 GO
 
--- Thủ tục thêm danh mục--
+-- Thủ tục thêm danh mục --
 ALTER PROC sp_InsertCategory
     @sCategoryName NVARCHAR(100),
     @sCategoryImage NVARCHAR(100),
     @sCategoryDescription NVARCHAR(MAX)
-    --@iIsVisible BIT
+    --@iIsVisible BIT 
 AS
 BEGIN
     INSERT INTO tbl_Categories (sCategoryName, sCategoryImage, sCategoryDescription) VALUES (@sCategoryName, @sCategoryImage, @sCategoryDescription)
@@ -119,7 +148,7 @@ END
 EXEC sp_InsertCategory N'Ô tô', '', N'abc'
 GO
 
--- Thủ tục xoá danh mục--
+-- Thủ tục xoá danh mục --
 CREATE PROC sp_DelelteCategoryByID
     @PK_iCategoryID INT
 AS
