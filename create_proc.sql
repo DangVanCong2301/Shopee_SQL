@@ -30,6 +30,7 @@ BEGIN
     SELECT TOP(3) 
         PK_iProductID, 
         FK_iCategoryID, 
+        sStoreName,
         sCategoryName, 
         sProductName, 
         sImageUrl, 
@@ -48,13 +49,14 @@ EXEC sp_rename 'sp_GetTopSellingProductsShop', 'sp_GetTop3SellingProductsShop'
 GO
 
 -- Thủ tục lấy top 10 sản phẩm bán chạy của cửa hàng theo mã cửa hàng --
-CREATE PROC sp_GetTop10SellingProductsShop
+ALTER PROC sp_GetTop10SellingProductsShop
     @PK_iShopID INT
 AS
 BEGIN
     SELECT TOP(10) 
         PK_iProductID, 
         FK_iCategoryID, 
+        sStoreName,
         sCategoryName, 
         sProductName, 
         sImageUrl, 
@@ -71,13 +73,14 @@ EXEC sp_GetTop10SellingProductsShop 2
 GO
 
 -- Thủ tục lấy top 10 sản phẩm giá tốt (tiền tăng dần) của cửa hàng theo mã cửa hàng --
-CREATE PROC sp_GetTop10GoodPriceProductsShop
+ALTER PROC sp_GetTop10GoodPriceProductsShop
     @PK_iShopID INT
 AS
 BEGIN
     SELECT TOP(10) 
         PK_iProductID, 
         FK_iCategoryID, 
+        sStoreName,
         sCategoryName, 
         sProductName, 
         sImageUrl, 
@@ -109,11 +112,11 @@ EXEC sp_GetCategoriesByShopID 2
 GO
 
 -- Thủ tục lấy các sản phẩm của cửa hàng theo mã cửa hàng --
-CREATE PROC sp_GetProductsByShopID
+ALTER PROC sp_GetProductsByShopID
     @PK_iShopID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' 
+    SELECT PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' 
     FROM tbl_Stores
     INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
@@ -121,6 +124,23 @@ BEGIN
 END
 EXEC sp_GetProductsByShopID 2
 GO
+
+-- Thủ tục lấy 10 sản phẩm gợi ý của cửa hàng theo mã cửa hàng --
+ALTER PROC sp_GetTop10SuggestProductsByShopID
+    @PK_iShopID INT
+AS
+BEGIN
+    SELECT TOP(10) PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible'
+    FROM tbl_Stores
+    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    WHERE PK_iStoreID = @PK_iShopID
+END
+EXEC sp_GetTop10SuggestProductsByShopID 2 
+-- Đổi tên
+EXEC sp_rename 'sp_Get10SuccessProductsByShopID', 'sp_GetTop10SuggestProductsByShopID'
+GO
+
 -------------------------------------------------------- THỂ LOẠI -------------------------------------------------------------------------
 -- Tham khảo: https://timoday.edu.vn/bai-3-cau-lenh-truy-van-du-lieu/
 -- Thủ tục lấy danh mục--
@@ -206,8 +226,9 @@ GO
 ALTER PROC sp_SelectProducts
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
 END
 EXEC sp_SelectProducts
 SELECT * FROM tbl_Products ORDER BY(dPrice) DESC
@@ -274,7 +295,7 @@ BEGIN
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     WHERE FK_iCategoryID = @FK_iCategoryID ORDER BY (dPrice) ASC
 END
-EXEC sp_SelectProductsByCategoryIDAndSortIncre 1
+EXEC sp_SelectProductsByCategoryIDAndSortIncre 2
 GO
 
 -- Thủ tục lấy sản phẩm theo mã danh mục và sắp xếp theo giá giảm dần--
@@ -318,8 +339,9 @@ ALTER PROC sp_SelectProductByID
     @PK_iProductID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, sStoreName, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     WHERE PK_iProductID = @PK_iProductID
 END
 EXEC sp_SelectProductByID 2
