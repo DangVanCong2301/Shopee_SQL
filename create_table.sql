@@ -51,7 +51,8 @@ CREATE TABLE tbl_BannerShops (
 )
 GO
 ALTER TABLE tbl_BannerShops ADD CONSTRAINT FK_iShopID FOREIGN KEY (FK_iShopID) REFERENCES tbl_Stores
-EXEC sp_rename 'tbl_BannerShops', 'tbl_Banners_Shops' -- Đổi tên bảng tbl_BannerShops thành tbl_Banners_Shops (Tương tự với đổi tên thủ tục lưu)
+EXEC sp_rename 'tbl_Banners_Shops', 'tbl_Sliders_Shop' -- Đổi tên bảng tbl_BannerShops thành tbl_Sliders_Shop (Tương tự với đổi tên thủ tục lưu)
+EXEC sp_rename 'tbl_Sliders_Shop.sImageBanner', 'sImageSlider', 'COLUMN'; -- Đổi tên cột trong 1 bảng
 
 ------------------------- TẠO BẢNG DANH MỤC --------------------------
 CREATE TABLE tbl_Categories (
@@ -61,7 +62,7 @@ CREATE TABLE tbl_Categories (
     iIsVisible BIT
 )
 GO
-exec sp_rename 'tbl_Categories.sName', 'sCategoryName', 'COLUMN';
+EXEC sp_rename 'tbl_Categories.sName', 'sCategoryName', 'COLUMN'; -- Đổi tên cột trong 1 bảng
 ALTER TABLE tbl_Categories
 ALTER COLUMN iIsVisible INT
 ALTER TABLE tbl_Categories ADD sCategoryImage NVARCHAR(100)
