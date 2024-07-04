@@ -108,7 +108,7 @@ BEGIN
     WHERE PK_iStoreID = @PK_iShopID
     GROUP BY PK_iCategoryID, sCategoryName, sCategoryImage, sCategoryDescription 
 END
-EXEC sp_GetCategoriesByShopID 2
+EXEC sp_GetCategoriesByShopID 1
 GO
 
 -- Thủ tục lấy các sản phẩm của cửa hàng theo mã cửa hàng --
@@ -139,6 +139,17 @@ END
 EXEC sp_GetTop10SuggestProductsByShopID 2 
 -- Đổi tên
 EXEC sp_rename 'sp_Get10SuccessProductsByShopID', 'sp_GetTop10SuggestProductsByShopID'
+GO
+
+-------------------------------------------------------- BANNER - SLIDER CỬA HÀNG -------------------------------------------------------------------------
+-- Lấy Slider theo mã cửa hàng --
+ALTER PROC sp_GetBannersShopByShopID
+    @FK_iShopID INT
+AS
+BEGIN
+    SELECT * from tbl_Sliders_Shop WHERE FK_iShopID = @FK_iShopID 
+END
+EXEC sp_GetBannersShopByShopID 1
 GO
 
 -------------------------------------------------------- THỂ LOẠI -------------------------------------------------------------------------
