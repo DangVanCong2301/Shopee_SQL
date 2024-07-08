@@ -122,7 +122,7 @@ BEGIN
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     WHERE PK_iStoreID = @PK_iShopID
 END
-EXEC sp_GetProductsByShopID 2
+EXEC sp_GetProductsByShopID 3
 GO
 
 -- Thủ tục lấy 10 sản phẩm gợi ý của cửa hàng theo mã cửa hàng --
@@ -307,6 +307,18 @@ BEGIN
     WHERE FK_iCategoryID = @FK_iCategoryID ORDER BY (dPrice) ASC
 END
 EXEC sp_SelectProductsByCategoryIDAndSortIncre 2
+GO
+
+-- Thủ tục lấy 12 sản phẩm và sắp xếp theo giá tăng dần --
+ALTER PROC sp_Get12ProductsAndSortIncre
+AS
+BEGIN
+    SELECT TOP(12) PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
+    INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
+    ORDER BY (dPrice) ASC
+END
+EXEC sp_Get12ProductsAndSortIncre
 GO
 
 -- Thủ tục lấy sản phẩm theo mã danh mục và sắp xếp theo giá giảm dần--
