@@ -74,6 +74,13 @@ ALTER TABLE tbl_Categories DROP COLUMN FK_iStoreID -- Xoá tên cột
 
 -- Đổi tên bảng: https://freetuts.net/doi-ten-table-trong-sql-server-1590.html
 
+------------------------- TẠO BẢNG GIẢM GIÁ SẢN PHẨM --------------------------
+CREATE TABLE tbl_Discounts (
+    PK_iDiscountID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    dPerDiscount FLOAT
+)
+GO
+
 ------------------------- TẠO BẢNG SẢN PHẨM --------------------------
 CREATE TABLE tbl_Products (
     PK_iProductID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
@@ -90,6 +97,9 @@ CREATE TABLE tbl_Products (
 )
 GO
 ALTER TABLE tbl_Products ADD CONSTRAINT FK_iCategoryID FOREIGN KEY (FK_iCategoryID) REFERENCES tbl_Categories
+-- Thêm khoá ngoại giảm giá
+ALTER TABLE tbl_Products ADD FK_iDiscountID INT
+ALTER TABLE tbl_Products ADD CONSTRAINT FK_iDiscountID FOREIGN KEY (FK_iDiscountID) REFERENCES tbl_Discounts
 --Thay đổi giá trị cột trong một bảng
 ALTER TABLE tbl_Products
 ALTER COLUMN iIsVisible INT
@@ -141,6 +151,9 @@ ALTER TABLE tbl_CartDetails ADD CONSTRAINT FK_User_CartDetail FOREIGN KEY (PK_iU
 ALTER TABLE tbl_CartDetails ADD CONSTRAINT FK_Product_CartDatail FOREIGN KEY (PK_iProductID) REFERENCES tbl_Products
 ALTER TABLE tbl_CartDetails ADD CONSTRAINT FK_iCartID FOREIGN KEY (PK_iCartID) REFERENCES tbl_Carts
 ALTER TABLE tbl_CartDetails add dUnitPrice FLOAT, dDiscount FLOAT, dMoney FLOAT
+ALTER TABLE tbl_CartDetails DROP COLUMN dDiscount -- Xoá tên cột  dDiscout
+ALTER TABLE tbl_CartDetails add dDiscount FLOAT
+SELECT * from tbl_CartDetails
 
 CREATE TABLE tbl_Orders (
     PK_iOrderID INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
