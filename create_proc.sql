@@ -37,13 +37,15 @@ BEGIN
         sProductDescription, 
         dPrice, 
         iQuantity, 
-        tbl_Products.iIsVisible as 'iIsVisible' 
+        tbl_Products.iIsVisible as 'iIsVisible',
+        dPerDiscount
     FROM tbl_Stores 
     INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID 
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE tbl_Stores.PK_iStoreID = @PK_iShopID
 END
-EXEC sp_GetTopSellingProductsShop 2
+EXEC sp_GetTop3SellingProductsShop 2
 -- Đổi tên
 EXEC sp_rename 'sp_GetTopSellingProductsShop', 'sp_GetTop3SellingProductsShop'
 GO
@@ -63,10 +65,12 @@ BEGIN
         sProductDescription, 
         dPrice, 
         iQuantity, 
-        tbl_Products.iIsVisible as 'iIsVisible' 
+        tbl_Products.iIsVisible as 'iIsVisible' ,
+        dPerDiscount
     FROM tbl_Stores 
     INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID 
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE tbl_Stores.PK_iStoreID = @PK_iShopID
 END
 EXEC sp_GetTop10SellingProductsShop 2
@@ -87,10 +91,12 @@ BEGIN
         sProductDescription, 
         dPrice, 
         iQuantity, 
-        tbl_Products.iIsVisible as 'iIsVisible' 
+        tbl_Products.iIsVisible as 'iIsVisible',
+        dPerDiscount
     FROM tbl_Stores 
     INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID 
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE tbl_Stores.PK_iStoreID = @PK_iShopID ORDER BY (dPrice) ASC
 END
 EXEC sp_GetTop10GoodPriceProductsShop 2
@@ -116,10 +122,11 @@ ALTER PROC sp_GetProductsByShopID
     @PK_iShopID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' 
+    SELECT PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount 
     FROM tbl_Stores
     INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE PK_iStoreID = @PK_iShopID
 END
 EXEC sp_GetProductsByShopID 3
@@ -130,10 +137,11 @@ ALTER PROC sp_GetTop10SuggestProductsByShopID
     @PK_iShopID INT
 AS
 BEGIN
-    SELECT TOP(10) PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible'
+    SELECT TOP(10) PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount
     FROM tbl_Stores
     INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE PK_iStoreID = @PK_iShopID
 END
 EXEC sp_GetTop10SuggestProductsByShopID 2 
@@ -237,9 +245,10 @@ GO
 ALTER PROC sp_SelectProducts
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
 END
 EXEC sp_SelectProducts
 SELECT * FROM tbl_Products ORDER BY(dPrice) DESC
@@ -276,8 +285,10 @@ ALTER PROC sp_SelectProductsByCategoryID
     @FK_iCategoryID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+    INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
     WHERE FK_iCategoryID = @FK_iCategoryID AND tbl_Products.iIsVisible = 1
 END
 SELECT * FROM tbl_Categories
@@ -285,12 +296,14 @@ EXEC sp_SelectProductsByCategoryID 1
 GO
 
 -- Thủ tục lấy sản phẩm theo mã danh mục (nếu là admin thì sẽ hiện thị tất cả sản phẩm --
-CREATE PROC sp_SelectProductsByCategoryIDIfRoleAdmin
+ALTER PROC sp_SelectProductsByCategoryIDIfRoleAdmin
     @FK_iCategoryID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE FK_iCategoryID = @FK_iCategoryID 
 END
 SELECT * FROM tbl_Categories
@@ -302,8 +315,9 @@ ALTER PROC sp_SelectProductsByCategoryIDAndSortIncre
     @FK_iCategoryID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE FK_iCategoryID = @FK_iCategoryID ORDER BY (dPrice) ASC
 END
 EXEC sp_SelectProductsByCategoryIDAndSortIncre 2
@@ -313,9 +327,10 @@ GO
 ALTER PROC sp_Get12ProductsAndSortIncre
 AS
 BEGIN
-    SELECT TOP(12) PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
+    SELECT TOP(12) PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     ORDER BY (dPrice) ASC
 END
 EXEC sp_Get12ProductsAndSortIncre
@@ -326,20 +341,22 @@ ALTER PROC sp_SelectProductsByCategoryIDAndSortReduce
     @FK_iCategoryID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE FK_iCategoryID = @FK_iCategoryID ORDER BY (dPrice) DESC
 END
 EXEC sp_SelectProductsByCategoryIDAndSortReduce 1
 GO
 
 -- Thủ tục lấy sản phẩm theo mã danh mục và sắp xếp theo tháng mới nhất--
-CREATE PROC sp_SelectProductsByCategoryIDAndSortLastestMonth
+ALTER PROC sp_SelectProductsByCategoryIDAndSortLastestMonth
     @FK_iCategoryID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE FK_iCategoryID = 1 ORDER BY Month(dCreateTime) DESC
 END
 EXEC sp_SelectProductsByCategoryIDAndSortReduce 1
@@ -350,8 +367,9 @@ ALTER PROC sp_SearchProductsByKeyword
     @sKeyword NVARCHAR(100)
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE sCategoryName LIKE N'%' + @sKeyword +  '%' OR sProductName LIKE N'%' + @sKeyword  + '%'
 END
 EXEC sp_SearchProductsByKeyword 'Tai'
@@ -362,9 +380,10 @@ ALTER PROC sp_SelectProductByID
     @PK_iProductID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, sStoreName, tbl_Products.iIsVisible as 'iIsVisible' FROM tbl_Products 
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, sStoreName, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE PK_iProductID = @PK_iProductID
 END
 EXEC sp_SelectProductByID 2
