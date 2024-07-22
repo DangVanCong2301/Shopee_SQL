@@ -22,6 +22,41 @@ CREATE TABLE tbl_Users (
 GO
 ALTER TABLE tbl_Users ADD CONSTRAINT FK_iRoleID FOREIGN KEY (FK_iRoleID) REFERENCES tbl_Roles
 ALTER TABLE tbl_Users ADD sPassword NVARCHAR(100)
+ALTER TABLE tbl_Users DROP COLUMN sPhone -- Xoá tên cột
+
+------------------------- TẠO BẢNG ĐỊA CHỈ NGƯỜI DÙNG --------------------------
+CREATE TABLE tbl_Addresses (
+    PK_iAddressID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    FK_iUserID INT,
+    sPhone NVARCHAR(20),
+    sAddress NVARCHAR(100)
+    CONSTRAINT FK_Addresses_Users FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users(PK_iUserID)
+)
+GO
+ALTER TABLE tbl_Addresses ADD iDefault INT
+
+-- Địa chỉ chọn --
+CREATE TABLE tbl_Cities (
+    PK_iCityID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    sCityName NVARCHAR(100)
+)
+GO
+
+CREATE TABLE tbl_Districts (
+    PK_iDistrictID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    FK_iCityID INT,
+    sDistrictName NVARCHAR(100)
+    CONSTRAINT FK_Districts_Cities FOREIGN KEY (FK_iCityID) REFERENCES tbl_Cities(PK_iCityID)
+)
+GO
+
+CREATE TABLE tbl_Streets (
+    PK_iStreetID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    FK_iDistrictID INT,
+    sStreetName NVARCHAR(100)
+    CONSTRAINT FK_Streets_Districts FOREIGN KEY (FK_iDistrictID) REFERENCES tbl_Districts(PK_iDistrictID)
+)
+GO
 
 -- Xoá cột: https://freetuts.net/xoa-column-trong-sql-server-1589.html
 exec sp_rename 'tbl_Users.bGender', 'iGender', 'COLUMN';

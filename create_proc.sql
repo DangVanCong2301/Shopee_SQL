@@ -506,6 +506,90 @@ END
 
 GO
 ------------------------------------------------------
+
+-------------------------------------------------------- ĐỊA CHỈ NGƯỜI DÙNG ---------------------------------------------------------------
+-- Thủ tục kiểm tra xem tài khoản người dùng đã thiết lập địa chỉ hay chưa --
+ALTER PROC sp_CheckAddressAccount
+    @FK_iUserID INT
+AS
+BEGIN
+    SELECT PK_iAddressID, FK_iUserID, tbl_Users.sFullName, sPhone, sAddress FROM tbl_Addresses 
+    INNER JOIN tbl_Users ON tbl_Addresses.FK_iUserID = tbl_Users.PK_iUserID
+    WHERE tbl_Addresses.FK_iUserID = @FK_iUserID
+END
+EXEC sp_CheckAddressAccount 2
+GO
+
+-- Thủ tục thêm địa chỉ người dùng --
+CREATE PROC sp_InsertAddressAccount
+    @FK_iUserID INT,
+    @sPhone NVARCHAR(20),
+    @sAddress NVARCHAR(100)
+AS
+BEGIN
+    INSERT INTO tbl_Addresses (FK_iUserID, sPhone, sAddress) VALUES (@FK_iUserID, @sPhone, @sAddress)
+END
+EXEC sp_InsertAddressAccount 2, '123', N'Số 20'
+GO
+
+-- Thủ tục xoá địa chỉ người dùng --
+CREATE PROC sp_DeleteAddressAccount
+    @PK_iAddressID INT
+AS
+BEGIN
+    DELETE tbl_Addresses WHERE PK_iAddressID = @PK_iAddressID
+END
+-- Đổi tên
+EXEC sp_rename 'sp_DeleteAddressAccount', 'sp_DeleteAddressAccountByID'
+EXEC sp_DeleteAddressAccountByID 1
+GO
+----- ĐỊA CHỈ CHỌN ----
+-- Lấy danh sách thành phố --
+CREATE PROC sp_GetCities
+AS
+BEGIN
+    SELECT 
+        PK_iCityID, 
+        sCityName,
+        COUNT(tbl_Districts.PK_iDistrictID) as 'iDistrictCount'
+    FROM tbl_Cities 
+        INNER JOIN tbl_Districts ON tbl_Cities.PK_iCityID = tbl_Districts.FK_iCityID
+        GROUP BY PK_iCityID, sCityName
+END
+EXEC sp_GetCities
+GO
+
+-- Lấy danh sách Quận/Huyện - 
+ALTER PROC sp_GetDistricts
+AS
+BEGIN
+    SELECT 
+        PK_iDistrictID, 
+        FK_iCityID,
+        sDistrictName,
+        sCityName
+    FROM tbl_Districts
+        INNER JOIN tbl_Cities ON tbl_Districts.FK_iCityID = tbl_Cities.PK_iCityID
+END
+EXEC sp_GetDistricts
+GO
+
+CREATE PROC sp_GetAddressChoose
+AS
+BEGIN
+    SELECT 
+        tbl_Cities.PK_iCityID, 
+        tbl_Districts.PK_iDistrictID, 
+        tbl_Streets.PK_iStreetID,
+        tbl_Cities.sCityName, 
+        tbl_Districts.sDistrictName ,
+        tbl_Streets.sStreetName
+    FROM tbl_Cities 
+        INNER JOIN tbl_Districts ON tbl_Cities.PK_iCityID = tbl_Districts.FK_iCityID
+        INNER JOIN tbl_Streets ON tbl_Districts.PK_iDistrictID = tbl_Streets.FK_iDistrictID
+END
+EXEC sp_GetAddressChoose
+GO
 -------------------------------------------------------- GIỎ HÀNG -------------------------------------------------------------------------
 -----Thủ tục lấy số lượng sản phẩm trong giỏ hàng-----
 select * FROM tbl_CartDetails
