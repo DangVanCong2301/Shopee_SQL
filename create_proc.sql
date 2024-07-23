@@ -513,7 +513,7 @@ ALTER PROC sp_CheckAddressAccount
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT PK_iAddressID, FK_iUserID, tbl_Users.sFullName, sPhone, sAddress FROM tbl_Addresses 
+    SELECT PK_iAddressID, FK_iUserID, tbl_Users.sFullName, sPhone, sAddress, iDefault FROM tbl_Addresses 
     INNER JOIN tbl_Users ON tbl_Addresses.FK_iUserID = tbl_Users.PK_iUserID
     WHERE tbl_Addresses.FK_iUserID = @FK_iUserID
 END
@@ -532,6 +532,32 @@ END
 EXEC sp_InsertAddressAccount 2, '123', N'Số 20'
 GO
 
+-- Thủ tục cập nhật địa chỉ người dùng --
+CREATE PROC sp_UpdateAddressAccountUserByID
+    @PK_iUserID INT,
+    @sFullName NVARCHAR(100)
+AS
+BEGIN
+    UPDATE tbl_Users SET sFullName = @sFullName WHERE PK_iUserID = @PK_iUserID
+END
+GO
+
+ALTER PROC sp_UpdateAddressAccountByID
+    @PK_iAddressID INT,
+    @FK_iUserID INT,
+    @sPhone NVARCHAR(20),
+    @sAddress NVARCHAR(100)
+    --@iDefault INT
+AS
+BEGIN
+    UPDATE tbl_Addresses SET sPhone = @sPhone, sAddress = @sAddress WHERE PK_iAddressID = @PK_iAddressID AND FK_iUserID = @FK_iUserID
+END
+-- Đổi tên
+EXEC sp_rename 'sp_UpdateAddressAccount', 'sp_UpdateAddressAccountByID'
+EXEC sp_UpdateAddressAccountByID 2, 2, '2030400404', 'Số 20, Ngõ 259, Phố Định Công, Quận Hoàng Mai, Hà Nội'
+SELECT * FROM tbl_Addresses
+GO
+
 -- Thủ tục xoá địa chỉ người dùng --
 CREATE PROC sp_DeleteAddressAccount
     @PK_iAddressID INT
@@ -543,6 +569,20 @@ END
 EXEC sp_rename 'sp_DeleteAddressAccount', 'sp_DeleteAddressAccountByID'
 EXEC sp_DeleteAddressAccountByID 1
 GO
+
+-- Thủ tục lấy địa chỉ người dùng với mã địa chỉ và mã tài khoản --
+CREATE PROC sp_GetAddressAccountByID
+    @PK_iAddressID INT,
+    @FK_iUserID INT
+AS 
+BEGIN
+    SELECT PK_iAddressID, FK_iUserID, tbl_Users.sFullName, sPhone, sAddress, iDefault FROM tbl_Addresses 
+    INNER JOIN tbl_Users ON tbl_Addresses.FK_iUserID = tbl_Users.PK_iUserID
+    WHERE tbl_Addresses.PK_iAddressID = @PK_iAddressID AND tbl_Addresses.FK_iUserID = @FK_iUserID
+END
+EXEC sp_GetAddressAccountByID 2, 2
+GO
+
 ----- ĐỊA CHỈ CHỌN ----
 -- Lấy danh sách thành phố --
 CREATE PROC sp_GetCities
