@@ -116,6 +116,16 @@ CREATE TABLE tbl_Discounts (
 )
 GO
 
+------------------------- TẠO BẢNG PHƯƠNG THỨC VẬN CHUYỂN --------------------------
+CREATE TABLE tbl_Transports (
+    PK_iTransportID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    sTransportName NVARCHAR(100),
+    dTransportPrice FLOAT,
+    sTransportPriceSub NVARCHAR(100)
+)
+GO
+ALTER TABLE tbl_Transports add dTransportPrice FLOAT
+
 ------------------------- TẠO BẢNG SẢN PHẨM --------------------------
 CREATE TABLE tbl_Products (
     PK_iProductID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
@@ -138,6 +148,9 @@ ALTER TABLE tbl_Products ADD CONSTRAINT FK_iDiscountID FOREIGN KEY (FK_iDiscount
 --Thay đổi giá trị cột trong một bảng
 ALTER TABLE tbl_Products
 ALTER COLUMN iIsVisible INT
+-- Thêm khoá ngoại FK_iTransportID
+ALTER TABLE tbl_Products ADD FK_iTransportID INT
+ALTER TABLE tbl_Products ADD CONSTRAINT FK_Products_Transports FOREIGN KEY (FK_iTransportID) REFERENCES tbl_Transports (PK_iTransportID)
 
 ------------------------- TẠO BẢNG YÊU THÍCH SẢN PHẨM --------------------------
 CREATE TABLE tbl_Favorites (
@@ -175,6 +188,7 @@ CREATE TABLE tbl_Carts (
 )
 GO
 
+------------------------- TẠO BẢNG CHI TIẾT GIỎ HÀNG --------------------------
 CREATE TABLE tbl_CartDetails (
     PK_iUserID INT,
     PK_iProductID INT,
@@ -190,6 +204,22 @@ ALTER TABLE tbl_CartDetails DROP COLUMN dDiscount -- Xoá tên cột  dDiscout
 ALTER TABLE tbl_CartDetails add dDiscount FLOAT
 SELECT * from tbl_CartDetails
 
+------------------------- TẠO BẢNG TRẠNG THÁI ĐẶT HÀNG --------------------------
+CREATE TABLE tbl_Order_Status (
+    PK_iOrderStatusID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    iOrderStatusCode INT,
+    sOrderStatusName NVARCHAR(100)
+)
+GO
+
+------------------------- TẠO BẢNG PHƯƠNG THỨC THANH TOÁN --------------------------
+CREATE TABLE tbl_Payments (
+    PK_iPaymentID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    sPaymentName NVARCHAR(100)
+)
+GO
+
+------------------------- TẠO BẢNG ĐẶT HÀNG --------------------------
 CREATE TABLE tbl_Orders (
     PK_iOrderID INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
     FK_iUserID INT,
@@ -198,7 +228,14 @@ CREATE TABLE tbl_Orders (
 )
 GO
 ALTER TABLE tbl_Orders ADD CONSTRAINT FK_User_Order FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users (PK_iUserID)
+-- Thêm cột khoá ngoại FK_iOrderStatusID
+ALTER TABLE tbl_Orders ADD FK_iOrderStatusID INT
+ALTER TABLE tbl_Orders ADD CONSTRAINT FK_Orders_OrderStatus FOREIGN KEY (FK_iOrderStatusID) REFERENCES tbl_Order_Status(PK_iOrderStatusID)
+-- Thêm cột khoá ngoại FK_iPaymentID
+ALTER TABLE tbl_Orders ADD FK_iPaymentID INT
+ALTER TABLE tbl_Orders ADD CONSTRAINT FK_Orders_Payments FOREIGN KEY (FK_iPaymentID) REFERENCES tbl_Payments(PK_iPaymentID)
 
+------------------------- TẠO BẢNG CHI TIẾT HÀNG --------------------------
 CREATE TABLE tbl_OrderDetails(
     PK_iOrderID INT,
     PK_iProductID INT,
