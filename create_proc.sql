@@ -654,13 +654,14 @@ ALTER PROC sp_GetInfoCart
     @PK_iUserID INT
 AS
 BEGIN
-    select tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_CartDetails.iQuantity, tbl_CartDetails.dUnitPrice, tbl_CartDetails.dDiscount, tbl_CartDetails.dMoney FROM tbl_CartDetails 
+    select tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_CartDetails.iQuantity, tbl_CartDetails.dUnitPrice, tbl_CartDetails.dDiscount, tbl_CartDetails.dMoney, tbl_Transports.dTransportPrice FROM tbl_CartDetails 
     INNER JOIN tbl_Users ON tbl_CartDetails.PK_iUserID = tbl_Users.PK_iUserID
     INNER JOIN tbl_Products ON tbl_CartDetails.PK_iProductID = tbl_Products.PK_iProductID
     INNER JOIN tbl_Carts ON tbl_CartDetails.PK_iCartID = tbl_Carts.PK_iCartID
+    INNER JOIN tbl_Transports ON tbl_Products.FK_iTransportID = tbl_Transports.PK_iTransportID
     where tbl_Users.PK_iUserID = @PK_iUserID    
 END
-EXEC sp_GetInfoCart 1
+EXEC sp_GetInfoCart 2
 GO      
 
 ------------------------------------------------------
