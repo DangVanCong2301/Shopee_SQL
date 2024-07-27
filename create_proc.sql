@@ -654,15 +654,35 @@ ALTER PROC sp_GetInfoCart
     @PK_iUserID INT
 AS
 BEGIN
-    select tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_CartDetails.iQuantity, tbl_CartDetails.dUnitPrice, tbl_CartDetails.dDiscount, tbl_CartDetails.dMoney, tbl_Transports.dTransportPrice FROM tbl_CartDetails 
+    SELECT tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_CartDetails.iQuantity, tbl_CartDetails.dUnitPrice, tbl_CartDetails.dDiscount, tbl_CartDetails.dMoney, tbl_Transports.dTransportPrice FROM tbl_CartDetails 
     INNER JOIN tbl_Users ON tbl_CartDetails.PK_iUserID = tbl_Users.PK_iUserID
     INNER JOIN tbl_Products ON tbl_CartDetails.PK_iProductID = tbl_Products.PK_iProductID
+    INNER JOIN tbl_Categories ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     INNER JOIN tbl_Carts ON tbl_CartDetails.PK_iCartID = tbl_Carts.PK_iCartID
     INNER JOIN tbl_Transports ON tbl_Products.FK_iTransportID = tbl_Transports.PK_iTransportID
-    where tbl_Users.PK_iUserID = @PK_iUserID    
+    WHERE tbl_Users.PK_iUserID = @PK_iUserID    
 END
-EXEC sp_GetInfoCart 2
-GO      
+EXEC sp_GetInfoCart 10
+GO   
+
+-----Thủ tục lấy thông tin sản phẩm giỏ hàng theo mã tài khoản, mã sản phẩm-----
+ALTER PROC sp_GetInfoCartByProductID
+    @PK_iUserID INT,
+    @PK_iProductID INT
+AS
+BEGIN
+    SELECT tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_CartDetails.iQuantity, tbl_CartDetails.dUnitPrice, tbl_CartDetails.dDiscount, tbl_CartDetails.dMoney, tbl_Transports.dTransportPrice FROM tbl_CartDetails 
+    INNER JOIN tbl_Users ON tbl_CartDetails.PK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_Products ON tbl_CartDetails.PK_iProductID = tbl_Products.PK_iProductID
+    INNER JOIN tbl_Categories ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Carts ON tbl_CartDetails.PK_iCartID = tbl_Carts.PK_iCartID
+    INNER JOIN tbl_Transports ON tbl_Products.FK_iTransportID = tbl_Transports.PK_iTransportID
+    WHERE tbl_Users.PK_iUserID = @PK_iUserID AND tbl_Products.PK_iProductID = @PK_iProductID
+END
+EXEC sp_GetInfoCartByProductID 1, 2
+GO
 
 ------------------------------------------------------
 
