@@ -245,3 +245,4 @@ CREATE TABLE tbl_OrderDetails(
 GO
 ALTER TABLE tbl_OrderDetails ADD CONSTRAINT FK_iOrder FOREIGN KEY (PK_iOrderID) REFERENCES tbl_Orders
 ALTER TABLE tbl_OrderDetails ADD CONSTRAINT FK_Product_OrderDetail FOREIGN KEY (PK_iProductID) REFERENCES tbl_Products
+EXEC sp_rename 'tbl_OrderDetails.iUnitPrice', 'dUnitPrice', 'COLUMN'; -- Đổi tên cột trong 1 bảng
