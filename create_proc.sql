@@ -18,6 +18,20 @@ END
 EXEC sp_GetShopByID 1
 GO
 
+-- Thủ tục lấy cửa hàng theo mã sản phẩm --
+CREATE PROC sp_GetShopByProductID
+    @PK_iProductID INT
+AS
+BEGIN
+    SELECT PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc
+    FROM tbl_Stores
+    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    WHERE PK_iProductID = @PK_iProductID
+END
+EXEC sp_GetShopByProductID 3
+GO
+
 -- Thủ tục lấy banner cửa hàng theo mã cửa hàng --
 SELECT * FROM tbl_Stores INNER JOIN tbl_BannerShops ON tbl_Stores.PK_iStoreID = tbl_BannerShops.FK_iShopID
 GO
