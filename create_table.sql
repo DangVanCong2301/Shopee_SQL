@@ -77,6 +77,7 @@ ALTER TABLE tbl_Stores ADD sImageAvatar NVARCHAR(100)
 ALTER TABLE tbl_Stores ADD sImageLogo NVARCHAR(100)
 ALTER TABLE tbl_Stores ADD sImageBackground NVARCHAR(100)
 ALTER TABLE tbl_Stores ADD sDesc NVARCHAR(MAX)
+ALTER TABLE tbl_Stores ADD sImageMall NVARCHAR(100)
 
 ------------------------- TẠO BẢNG BANNER CỬA HÀNG --------------------------
 CREATE TABLE tbl_BannerShops (
@@ -88,6 +89,14 @@ GO
 ALTER TABLE tbl_BannerShops ADD CONSTRAINT FK_iShopID FOREIGN KEY (FK_iShopID) REFERENCES tbl_Stores
 EXEC sp_rename 'tbl_Banners_Shops', 'tbl_Sliders_Shop' -- Đổi tên bảng tbl_BannerShops thành tbl_Sliders_Shop (Tương tự với đổi tên thủ tục lưu)
 EXEC sp_rename 'tbl_Sliders_Shop.sImageBanner', 'sImageSlider', 'COLUMN'; -- Đổi tên cột trong 1 bảng
+
+------------------------- TẠO BẢNG DANH MỤC CHA --------------------------
+CREATE TABLE tbl_Parent_Categories (
+    PK_iParentCategoryID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    sParentCategoryName NVARCHAR(100),
+    sParentCategoryImage NVARCHAR(100)
+)
+GO
 
 ------------------------- TẠO BẢNG DANH MỤC --------------------------
 CREATE TABLE tbl_Categories (
@@ -106,6 +115,9 @@ ALTER TABLE tbl_Categories ADD CONSTRAINT FK_iStore FOREIGN KEY (FK_iStoreID) RE
 -- Xoá cột khoá ngoại FK_iStore
 ALTER TABLE tbl_Categories DROP CONSTRAINT FK_iStore -- Xoá tên khoá ngoại
 ALTER TABLE tbl_Categories DROP COLUMN FK_iStoreID -- Xoá tên cột 
+-- Thêm cột khoá ngoại FK_iParentCategoryID
+ALTER TABLE tbl_Categories ADD FK_iParentCategoryID INT
+ALTER TABLE tbl_Categories ADD CONSTRAINT FK_Categories_ParentCategory FOREIGN KEY (FK_iParentCategoryID) REFERENCES tbl_Parent_Categories (PK_iParentCategoryID)
 
 -- Đổi tên bảng: https://freetuts.net/doi-ten-table-trong-sql-server-1590.html
 
