@@ -32,6 +32,21 @@ END
 EXEC sp_GetShopByProductID 3
 GO
 
+-- Thủ tục lấy cửa hàng theo mã danh mục cha --
+ALTER PROC sp_GetShopByParentCategoryID
+    @FK_iParentCategoryID INT
+AS
+BEGIN
+    SELECT PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc, COUNT(tbl_Categories.PK_iCategoryID) as 'iCategoryCount'
+    FROM tbl_Parent_Categories
+    INNER JOIN tbl_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    WHERE tbl_Parent_Categories.PK_iParentCategoryID = @FK_iParentCategoryID
+    GROUP BY PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc
+END
+EXEC sp_GetShopByParentCategoryID 3
+GO
+
 -- Thủ tục lấy banner cửa hàng theo mã cửa hàng --
 SELECT * FROM tbl_Stores INNER JOIN tbl_BannerShops ON tbl_Stores.PK_iStoreID = tbl_BannerShops.FK_iShopID
 GO
@@ -174,6 +189,19 @@ END
 EXEC sp_GetBannersShopByShopID 1
 GO
 
+-------------------------------------------------------- THỂ LOẠI CHA -------------------------------------------------------------------------
+-- Thủ tục lấy danh mục--
+CREATE PROC sp_SelectParentCategories
+AS
+BEGIN
+    SELECT PK_iParentCategoryID, sParentCategoryName, sParentCategoryImage, COUNT(tbl_Categories.PK_iCategoryID) as 'iCategoryCount'
+    FROM tbl_Parent_Categories INNER JOIN tbl_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    GROUP BY PK_iParentCategoryID, sParentCategoryName, sParentCategoryImage
+END
+EXEC sp_SelectParentCategories
+SELECT * FROM tbl_Categories
+GO
+
 -------------------------------------------------------- THỂ LOẠI -------------------------------------------------------------------------
 -- Tham khảo: https://timoday.edu.vn/bai-3-cau-lenh-truy-van-du-lieu/
 -- Thủ tục lấy danh mục--
@@ -181,10 +209,27 @@ ALTER PROC sp_SelectCategories
 AS
 BEGIN
     SELECT PK_iCategoryID, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount', sCategoryDescription
-    FROM tbl_Categories INNER JOIN tbl_Products ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    FROM tbl_Categories 
+    INNER JOIN tbl_Products ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
     GROUP BY PK_iCategoryID, sCategoryName, sCategoryImage, sCategoryDescription
 END
 EXEC sp_SelectCategories
+SELECT * FROM tbl_Categories
+GO
+
+-- Thủ tục lấy danh mục theo mã danh mục cha --
+ALTER PROC sp_SelectCategoriesByParentCategoryID
+    @FK_iParentCategoryID INT
+AS
+BEGIN
+    SELECT PK_iCategoryID, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount', sCategoryDescription
+    FROM tbl_Categories 
+    INNER JOIN tbl_Parent_Categories ON tbl_Categories.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
+    INNER JOIN tbl_Products ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    WHERE FK_iParentCategoryID = @FK_iParentCategoryID
+    GROUP BY PK_iCategoryID, FK_iParentCategoryID, sCategoryName, sCategoryImage, sCategoryDescription 
+END
+EXEC sp_SelectCategoriesByParentCategoryID 3
 SELECT * FROM tbl_Categories
 GO
 
@@ -309,6 +354,22 @@ SELECT * FROM tbl_Categories
 EXEC sp_SelectProductsByCategoryID 1
 GO
 
+-- Thủ tục lấy sản phẩm theo mã danh mục cha (nếu là quyền là user thì một số sản phẩm sẽ không hiển thị --
+CREATE PROC sp_SelectProductsByParentCategoryID
+    @FK_iParentCategoryID INT
+AS
+BEGIN
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
+    INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+    INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
+    WHERE FK_iParentCategoryID = @FK_iParentCategoryID AND tbl_Products.iIsVisible = 1
+END
+SELECT * FROM tbl_Categories
+EXEC sp_SelectProductsByParentCategoryID 3
+GO
+
 -- Thủ tục lấy sản phẩm theo mã danh mục (nếu là admin thì sẽ hiện thị tất cả sản phẩm --
 ALTER PROC sp_SelectProductsByCategoryIDIfRoleAdmin
     @FK_iCategoryID INT
@@ -322,6 +383,22 @@ BEGIN
 END
 SELECT * FROM tbl_Categories
 EXEC sp_SelectProductsByCategoryIDIfRoleAdmin 1
+GO
+
+-- Thủ tục lấy sản phẩm theo mã danh mục cha (nếu là admin thì sẽ hiện thị tất cả sản phẩm) --
+CREATE PROC sp_SelectProductsByParentCategoryIDIfRoleAdmin
+    @FK_iParentCategoryID INT
+AS
+BEGIN
+    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
+    INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+    WHERE FK_iCategoryID = @FK_iParentCategoryID
+END
+SELECT * FROM tbl_Categories
+EXEC sp_SelectProductsByParentCategoryIDIfRoleAdmin 1
 GO
 
 -- Thủ tục lấy sản phẩm theo mã danh mục và sắp xếp theo giá tăng dần --
