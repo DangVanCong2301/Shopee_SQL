@@ -1,11 +1,13 @@
 -------------------------------------------------------- CỬA HÀNG -------------------------------------------------------------------------
 -- Thủ tục lấy cửa hàng --
-CREATE PROC sp_SelelteStores
+CREATE PROC sp_GetStores
 AS
 BEGIN
     SELECT * FROM tbl_Stores
 END
-EXEC sp_SelelteStores
+EXEC sp_GetStores
+-- Đổi tên
+EXEC sp_rename 'sp_SelelteStores', 'sp_GetStores'
 GO
 
 -- Thủ tục lấy cửa hàng theo mã cửa hàng --
@@ -18,12 +20,22 @@ END
 EXEC sp_GetShopByID 1
 GO
 
+-- Thủ tục lấy cửa hàng theo tên đăng nhập --
+CREATE PROC sp_GetShopByUsername
+    @sShopUsername NVARCHAR(100)
+AS
+BEGIN
+    SELECT * FROM tbl_Stores WHERE sStoreUsername = @sShopUsername
+END
+EXEC sp_GetShopByUsername 'f4shop.vn'
+GO
+
 -- Thủ tục lấy cửa hàng theo mã sản phẩm --
-CREATE PROC sp_GetShopByProductID
+ALTER PROC sp_GetShopByProductID
     @PK_iProductID INT
 AS
 BEGIN
-    SELECT PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc
+    SELECT PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sImageMall, sStoreUsername, sDesc
     FROM tbl_Stores
     INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
@@ -37,12 +49,12 @@ ALTER PROC sp_GetShopByParentCategoryID
     @FK_iParentCategoryID INT
 AS
 BEGIN
-    SELECT PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc, COUNT(tbl_Categories.PK_iCategoryID) as 'iCategoryCount'
+    SELECT PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sImageMall, sStoreUsername, sDesc, COUNT(tbl_Categories.PK_iCategoryID) as 'iCategoryCount'
     FROM tbl_Parent_Categories
     INNER JOIN tbl_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     WHERE tbl_Parent_Categories.PK_iParentCategoryID = @FK_iParentCategoryID
-    GROUP BY PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc
+    GROUP BY PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc, sImageMall, sStoreUsername
 END
 EXEC sp_GetShopByParentCategoryID 3
 GO

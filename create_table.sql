@@ -78,6 +78,7 @@ ALTER TABLE tbl_Stores ADD sImageLogo NVARCHAR(100)
 ALTER TABLE tbl_Stores ADD sImageBackground NVARCHAR(100)
 ALTER TABLE tbl_Stores ADD sDesc NVARCHAR(MAX)
 ALTER TABLE tbl_Stores ADD sImageMall NVARCHAR(100)
+ALTER TABLE tbl_Stores ADD sStoreUsername NVARCHAR(100)
 
 ------------------------- TẠO BẢNG BANNER CỬA HÀNG --------------------------
 CREATE TABLE tbl_BannerShops (
