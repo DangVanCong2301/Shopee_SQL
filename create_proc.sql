@@ -620,19 +620,21 @@ BEGIN
     INNER JOIN tbl_Users ON tbl_Addresses.FK_iUserID = tbl_Users.PK_iUserID
     WHERE tbl_Addresses.FK_iUserID = @FK_iUserID
 END
-EXEC sp_CheckAddressAccount 2
+EXEC sp_CheckAddressAccount 1
 GO
 
 -- Thủ tục thêm địa chỉ người dùng --
-CREATE PROC sp_InsertAddressAccount
+ALTER PROC sp_InsertAddressAccount
     @FK_iUserID INT,
     @sPhone NVARCHAR(20),
-    @sAddress NVARCHAR(100)
+    @sAddress NVARCHAR(100),
+    @iDefault INT
 AS
 BEGIN
-    INSERT INTO tbl_Addresses (FK_iUserID, sPhone, sAddress) VALUES (@FK_iUserID, @sPhone, @sAddress)
+    INSERT INTO tbl_Addresses (FK_iUserID, sPhone, sAddress, iDefault) VALUES (@FK_iUserID, @sPhone, @sAddress, @iDefault)
 END
 EXEC sp_InsertAddressAccount 2, '123', N'Số 20'
+SELECT * FROM tbl_Addresses
 GO
 
 -- Thủ tục cập nhật địa chỉ người dùng --
@@ -670,7 +672,7 @@ BEGIN
 END
 -- Đổi tên
 EXEC sp_rename 'sp_DeleteAddressAccount', 'sp_DeleteAddressAccountByID'
-EXEC sp_DeleteAddressAccountByID 1
+EXEC sp_DeleteAddressAccountByID 7
 GO
 
 -- Thủ tục lấy địa chỉ người dùng với mã địa chỉ và mã tài khoản --
@@ -891,6 +893,50 @@ select * FROM tbl_CartDetails
 EXEC sp_CheckProductInCartDetail 1, 3
 GO
 --------------------------------------------------
+-------------------------------------------------------- PHƯƠNG THỨC THANH TOÁN ------------------------------------------------------------
+-- Thủ tục kiểm tra xem người dùng đã chọn phương thức thanh toán hay chưa? -- 
+ALTER PROC sp_CheckPaymentsTypeByUserID
+    @iUserID INT
+AS
+BEGIN
+    SELECT PK_iPaymentID,  sPaymentName, sPaymentImage FROM tbl_PaymentsType
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.PK_iPaymentTypeID
+    WHERE iUserID = @iUserID
+END
+EXEC sp_CheckPaymentsTypeByUserID 1
+GO
+
+-- Thủ tục thêm/đặt phương thức cho tài khoản người dùng --
+ALTER PROC sp_InsertPaymentsType
+    @PK_iPaymentTypeID INT,
+    @UserID INT
+AS
+BEGIN
+    INSERT INTO tbl_PaymentsType(PK_iPaymentTypeID, iUserID) VALUES (@PK_iPaymentTypeID, @UserID)
+END
+EXEC sp_InsertPaymentsType 1, 2
+GO
+
+-- Thủ tục cập nhật phương thức thanh toán 
+ALTER PROC sp_UpdatePaymentsType
+    @PK_iPaymentTypeID INT,
+    @UserID INT
+AS
+BEGIN
+    UPDATE tbl_PaymentsType SET PK_iPaymentTypeID = @PK_iPaymentTypeID WHERE iUserID = @UserID
+END
+EXEC sp_UpdatePaymentsType 4, 1
+GO
+
+-- Thủ tục lấy phương thức thanh toán của tài khoản
+CREATE PROC sp_GetPaymentsTypeByUserID
+AS
+BEGIN
+    SELECT PK_iPaymentID,  sPaymentName, sPaymentImage FROM tbl_PaymentsType 
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.PK_iPaymentTypeID 
+    WHERE tbl_PaymentsType.iUserID = 2
+END
+GO
 -------------------------------------------------------- ĐẶT HÀNG ------------------------------------------------------------
 -----Thủ tục thêm đơn hàng-----
 ALTER PROC sp_InsertOrder
@@ -916,6 +962,18 @@ BEGIN
 END
 GO
 
+-----Thủ tục lấy đơn hàng theo mã người dùng ở trạng thái chờ thanh toán -----
+ALTER PROC sp_GetOrderByUserIDWaitSettlement
+    @FK_iUserID INT
+AS
+BEGIN
+    SELECT PK_iOrderID, FK_iUserID, dDate, fTotalPrice, FK_iOrderStatusID, FK_iPaymentID FROM tbl_Orders
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    WHERE FK_iUserID = @FK_iUserID AND tbl_Order_Status.iOrderStatusCode = 0
+END
+EXEC sp_GetOrderByUserIDWaitSettlement 2
+GO
+
 -----Thủ tục thêm sản phẩm vào chi tiết đơn hàng -----
 ALTER PROC sp_InserProductIntoOrderDetail
     @PK_iOrderID INT,
@@ -927,6 +985,46 @@ BEGIN
     INSERT INTO tbl_OrderDetails (PK_iOrderID, PK_iProductID, iQuantity, dUnitPrice) VALUES (@PK_iOrderID, @PK_iProductID, @iQuantity, @iUnitPrice)
 END
 SELECT * FROM tbl_OrderDetails
+GO
+
+-----Thủ tục lấy sản phẩm chi tiết đơn hàng theo mã tài khoản -----
+ALTER PROC sp_GetProductsOrderByUserID
+    @PK_iUserID INT
+AS  
+BEGIN
+    SELECT tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode FROM tbl_OrderDetails
+    INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_OrderDetails.PK_iProductID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID 
+    INNER JOIN tbl_Discounts ON tbl_Discounts.PK_iDiscountID = tbl_Products.FK_iDiscountID
+    INNER JOIN tbl_Categories ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Orders ON tbl_Orders.PK_iOrderID = tbl_OrderDetails.PK_iOrderID 
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    WHERE tbl_Orders.FK_iUserID = @PK_iUserID
+END
+EXEC sp_GetProductsOrderByUserID 2
+SELECT * FROM tbl_OrderDetails
+SELECT * FROM tbl_Orders
+GO
+
+-----Thủ tục lấy sản phẩm chi tiết đơn hàng theo mã tài khoản theo trạng thái chờ thành toán -----
+ALTER PROC sp_GetProductsOrderByUserIDWaitSettlement
+    @PK_iUserID INT
+AS  
+BEGIN
+    SELECT tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode FROM tbl_OrderDetails
+    INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_OrderDetails.PK_iProductID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID 
+    INNER JOIN tbl_Discounts ON tbl_Discounts.PK_iDiscountID = tbl_Products.FK_iDiscountID
+    INNER JOIN tbl_Categories ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Orders ON tbl_Orders.PK_iOrderID = tbl_OrderDetails.PK_iOrderID 
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    WHERE tbl_Orders.FK_iUserID = @PK_iUserID AND tbl_Order_Status.iOrderStatusCode = 0
+END
+EXEC sp_GetProductsOrderByUserIDWaitSettlement 2
+SELECT * FROM tbl_Order_Status
+SELECT * FROM tbl_Orders
 GO
 
 

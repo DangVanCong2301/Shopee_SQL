@@ -231,6 +231,25 @@ CREATE TABLE tbl_Payments (
     sPaymentName NVARCHAR(100)
 )
 GO
+-- Thêm cột ảnh phương thức
+ALTER TABLE tbl_Payments ADD sPaymentImage NVARCHAR(100)
+
+------------------------- TẠO BẢNG LOẠI PHƯƠNG THỨC THANH TOÁN --------------------------
+CREATE TABLE tbl_PaymentsType (
+    PK_iPaymentTypeID INT NOT NULL,
+    iUserID INT
+)
+GO
+ALTER TABLE tbl_PaymentsType ADD CONSTRAINT FK_PaymentsType_Payments FOREIGN KEY (PK_iPaymentTypeID) REFERENCES tbl_Payments (PK_iPaymentID)
+-- Xoá khoá ngoại FK_iPaymentID
+ALTER TABLE tbl_PaymentsType DROP CONSTRAINT FK_PaymentsType_Payments -- Xoá tên khoá ngoại
+ALTER TABLE tbl_PaymentsType DROP COLUMN PK_iPaymentID -- Xoá tên cột 
+EXEC sp_rename 'tbl_PaymentsType.PK_iPaymentID', 'PK_iPaymentTypeID', 'COLUMN'; -- Đổi tên cột trong 1 bảng
+--Thay đổi giá trị cột trong một bảng
+ALTER TABLE tbl_PaymentsType
+ALTER COLUMN PK_iPaymentID INT
+-- Xoá khoá chính PK_iPaymentTypeID
+ALTER TABLE tbl_PaymentsType DROP CONSTRAINT PK_iPaymentTypeID
 
 ------------------------- TẠO BẢNG ĐẶT HÀNG --------------------------
 CREATE TABLE tbl_Orders (
@@ -247,6 +266,13 @@ ALTER TABLE tbl_Orders ADD CONSTRAINT FK_Orders_OrderStatus FOREIGN KEY (FK_iOrd
 -- Thêm cột khoá ngoại FK_iPaymentID
 ALTER TABLE tbl_Orders ADD FK_iPaymentID INT
 ALTER TABLE tbl_Orders ADD CONSTRAINT FK_Orders_Payments FOREIGN KEY (FK_iPaymentID) REFERENCES tbl_Payments(PK_iPaymentID)
+-- Xoá khoá ngoại FK_iPaymentID
+ALTER TABLE tbl_Orders DROP CONSTRAINT FK_Orders_PaymentsType -- Xoá tên khoá ngoại
+ALTER TABLE tbl_Orders DROP COLUMN FK_iPaymentTypeID -- Xoá tên cột 
+-- Thêm cột khoá ngoại FK_PaymentTypeID
+ALTER TABLE tbl_Orders ADD FK_iPaymentType INT
+EXEC sp_rename 'tbl_Orders.FK_iPaymentType', 'FK_iPaymentTypeID', 'COLUMN'; -- Đổi tên cột trong 1 bảng
+ALTER TABLE tbl_Orders ADD CONSTRAINT FK_Orders_PaymentsType FOREIGN KEY (FK_iPaymentTypeID) REFERENCES tbl_PaymentsType (PK_iPaymentTypeID)
 
 ------------------------- TẠO BẢNG CHI TIẾT HÀNG --------------------------
 CREATE TABLE tbl_OrderDetails(
@@ -258,4 +284,8 @@ CREATE TABLE tbl_OrderDetails(
 GO
 ALTER TABLE tbl_OrderDetails ADD CONSTRAINT FK_iOrder FOREIGN KEY (PK_iOrderID) REFERENCES tbl_Orders
 ALTER TABLE tbl_OrderDetails ADD CONSTRAINT FK_Product_OrderDetail FOREIGN KEY (PK_iProductID) REFERENCES tbl_Products
+-- Thêm cột tiền
+ALTER TABLE tbl_OrderDetails ADD dMoney FLOAT
+-- Thay đổi giá trị cột
+ALTER TABLE tbl_OrderDetails ALTER COLUMN dUnitPrice FLOAT
 EXEC sp_rename 'tbl_OrderDetails.iUnitPrice', 'dUnitPrice', 'COLUMN'; -- Đổi tên cột trong 1 bảng
