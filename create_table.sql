@@ -236,11 +236,12 @@ ALTER TABLE tbl_Payments ADD sPaymentImage NVARCHAR(100)
 
 ------------------------- TẠO BẢNG LOẠI PHƯƠNG THỨC THANH TOÁN --------------------------
 CREATE TABLE tbl_PaymentsType (
-    PK_iPaymentTypeID INT NOT NULL,
+    PK_iPaymentTypeID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    FK_iPaymentID INT,
     iUserID INT
 )
 GO
-ALTER TABLE tbl_PaymentsType ADD CONSTRAINT FK_PaymentsType_Payments FOREIGN KEY (PK_iPaymentTypeID) REFERENCES tbl_Payments (PK_iPaymentID)
+ALTER TABLE tbl_PaymentsType ADD CONSTRAINT FK_PaymentsType_Payments FOREIGN KEY (FK_iPaymentID) REFERENCES tbl_Payments (PK_iPaymentID)
 -- Xoá khoá ngoại FK_iPaymentID
 ALTER TABLE tbl_PaymentsType DROP CONSTRAINT FK_PaymentsType_Payments -- Xoá tên khoá ngoại
 ALTER TABLE tbl_PaymentsType DROP COLUMN PK_iPaymentID -- Xoá tên cột 
@@ -270,7 +271,7 @@ ALTER TABLE tbl_Orders ADD CONSTRAINT FK_Orders_Payments FOREIGN KEY (FK_iPaymen
 ALTER TABLE tbl_Orders DROP CONSTRAINT FK_Orders_PaymentsType -- Xoá tên khoá ngoại
 ALTER TABLE tbl_Orders DROP COLUMN FK_iPaymentTypeID -- Xoá tên cột 
 -- Thêm cột khoá ngoại FK_PaymentTypeID
-ALTER TABLE tbl_Orders ADD FK_iPaymentType INT
+ALTER TABLE tbl_Orders ADD FK_iPaymentTypeID INT
 EXEC sp_rename 'tbl_Orders.FK_iPaymentType', 'FK_iPaymentTypeID', 'COLUMN'; -- Đổi tên cột trong 1 bảng
 ALTER TABLE tbl_Orders ADD CONSTRAINT FK_Orders_PaymentsType FOREIGN KEY (FK_iPaymentTypeID) REFERENCES tbl_PaymentsType (PK_iPaymentTypeID)
 

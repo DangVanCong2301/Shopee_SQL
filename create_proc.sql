@@ -899,31 +899,32 @@ ALTER PROC sp_CheckPaymentsTypeByUserID
     @iUserID INT
 AS
 BEGIN
-    SELECT PK_iPaymentID,  sPaymentName, sPaymentImage FROM tbl_PaymentsType
-    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.PK_iPaymentTypeID
+    SELECT PK_iPaymentTypeID, PK_iPaymentID,  sPaymentName, sPaymentImage FROM tbl_PaymentsType
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
     WHERE iUserID = @iUserID
 END
 EXEC sp_CheckPaymentsTypeByUserID 1
+SELECT * FROM tbl_PaymentsType
 GO
 
 -- Thủ tục thêm/đặt phương thức cho tài khoản người dùng --
 ALTER PROC sp_InsertPaymentsType
-    @PK_iPaymentTypeID INT,
+    @FK_iPaymentID INT,
     @UserID INT
 AS
 BEGIN
-    INSERT INTO tbl_PaymentsType(PK_iPaymentTypeID, iUserID) VALUES (@PK_iPaymentTypeID, @UserID)
+    INSERT INTO tbl_PaymentsType(FK_iPaymentID, iUserID) VALUES (@FK_iPaymentID, @UserID)
 END
 EXEC sp_InsertPaymentsType 1, 2
 GO
 
 -- Thủ tục cập nhật phương thức thanh toán 
 ALTER PROC sp_UpdatePaymentsType
-    @PK_iPaymentTypeID INT,
+    @FK_iPaymentID INT,
     @UserID INT
 AS
 BEGIN
-    UPDATE tbl_PaymentsType SET PK_iPaymentTypeID = @PK_iPaymentTypeID WHERE iUserID = @UserID
+    UPDATE tbl_PaymentsType SET FK_iPaymentID = @FK_iPaymentID WHERE iUserID = @UserID
 END
 EXEC sp_UpdatePaymentsType 4, 1
 GO
@@ -967,7 +968,7 @@ ALTER PROC sp_GetOrderByUserIDWaitSettlement
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT PK_iOrderID, FK_iUserID, dDate, fTotalPrice, FK_iOrderStatusID, FK_iPaymentID FROM tbl_Orders
+    SELECT PK_iOrderID, FK_iUserID, dDate, fTotalPrice, FK_iOrderStatusID, FK_iPaymentTypeID FROM tbl_Orders
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     WHERE FK_iUserID = @FK_iUserID AND tbl_Order_Status.iOrderStatusCode = 0
 END
