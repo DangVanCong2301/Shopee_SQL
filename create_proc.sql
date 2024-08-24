@@ -945,10 +945,10 @@ ALTER PROC sp_InsertOrder
     @dDate DATETIME,
     @dTotalPrice FLOAT,
     @FK_iOrderStatusID INT,
-    @FK_iPaymentID INT
+    @FK_iPaymentTypeID INT
 AS
 BEGIN
-    SET DATEFORMAT dmy INSERT INTO tbl_Orders (FK_iUserID, dDate, fTotalPrice, FK_iOrderStatusID, FK_iPaymentID) VALUES (@FK_iUserID, @dDate, @dTotalPrice, @FK_iOrderStatusID, @FK_iPaymentID)
+    SET DATEFORMAT dmy INSERT INTO tbl_Orders (FK_iUserID, dDate, fTotalPrice, FK_iOrderStatusID, FK_iPaymentTypeID) VALUES (@FK_iUserID, @dDate, @dTotalPrice, @FK_iOrderStatusID, @FK_iPaymentTypeID)
 END
 SELECT * FROM tbl_Orders
 GO
@@ -961,6 +961,7 @@ AS
 BEGIN
     SELECT * FROM tbl_Orders WHERE FK_iUserID = @FK_iUserID AND dDate = @dDate
 END
+SET DATEFORMAT dmy EXEC sp_GetOrderByID 2, '29/7/2024'
 GO
 
 -----Thủ tục lấy đơn hàng theo mã người dùng ở trạng thái chờ thanh toán -----
@@ -972,7 +973,7 @@ BEGIN
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     WHERE FK_iUserID = @FK_iUserID AND tbl_Order_Status.iOrderStatusCode = 0
 END
-EXEC sp_GetOrderByUserIDWaitSettlement 2
+EXEC sp_GetOrderByUserIDWaitSettlement 4
 GO
 
 -----Thủ tục thêm sản phẩm vào chi tiết đơn hàng -----
@@ -980,10 +981,11 @@ ALTER PROC sp_InserProductIntoOrderDetail
     @PK_iOrderID INT,
     @PK_iProductID INT,
     @iQuantity INT,
-    @iUnitPrice FLOAT
+    @iUnitPrice FLOAT,
+    @dMoney FLOAT
 AS  
 BEGIN
-    INSERT INTO tbl_OrderDetails (PK_iOrderID, PK_iProductID, iQuantity, dUnitPrice) VALUES (@PK_iOrderID, @PK_iProductID, @iQuantity, @iUnitPrice)
+    INSERT INTO tbl_OrderDetails (PK_iOrderID, PK_iProductID, iQuantity, dUnitPrice, dMoney) VALUES (@PK_iOrderID, @PK_iProductID, @iQuantity, @iUnitPrice, @dMoney)
 END
 SELECT * FROM tbl_OrderDetails
 GO
@@ -1003,7 +1005,7 @@ BEGIN
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     WHERE tbl_Orders.FK_iUserID = @PK_iUserID
 END
-EXEC sp_GetProductsOrderByUserID 2
+EXEC sp_GetProductsOrderByUserID 1
 SELECT * FROM tbl_OrderDetails
 SELECT * FROM tbl_Orders
 GO
@@ -1023,7 +1025,7 @@ BEGIN
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     WHERE tbl_Orders.FK_iUserID = @PK_iUserID AND tbl_Order_Status.iOrderStatusCode = 0
 END
-EXEC sp_GetProductsOrderByUserIDWaitSettlement 2
+EXEC sp_GetProductsOrderByUserIDWaitSettlement 4
 SELECT * FROM tbl_Order_Status
 SELECT * FROM tbl_Orders
 GO
