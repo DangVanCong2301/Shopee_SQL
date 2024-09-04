@@ -606,7 +606,16 @@ AS
 BEGIN
     UPDATE tbl_Users SET sUserName = @sUserName, sFullName = @sFullName, sEmail = @sEmail, iGender = @iGender, dDateBirth = @DateBirth, sImageProfile = @sImageProfile WHERE PK_iUserID = @PK_iUserID
 END
+GO
 
+-- Thủ tục lấy lại mật khẩu tài khoản với email --
+CREATE PROC sp_GetPasswordAccountByEmail
+    @sEmail NVARCHAR(100)
+AS
+BEGIN
+    SELECT * FROM tbl_Users WHERE sEmail = @sEmail
+END
+EXEC sp_GetPasswordAccountByEmail 'cuong@gmail.com'
 GO
 ------------------------------------------------------
 
