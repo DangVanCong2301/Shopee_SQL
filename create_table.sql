@@ -274,6 +274,9 @@ ALTER TABLE tbl_Orders DROP COLUMN FK_iPaymentTypeID -- Xoá tên cột
 ALTER TABLE tbl_Orders ADD FK_iPaymentTypeID INT
 EXEC sp_rename 'tbl_Orders.FK_iPaymentType', 'FK_iPaymentTypeID', 'COLUMN'; -- Đổi tên cột trong 1 bảng
 ALTER TABLE tbl_Orders ADD CONSTRAINT FK_Orders_PaymentsType FOREIGN KEY (FK_iPaymentTypeID) REFERENCES tbl_PaymentsType (PK_iPaymentTypeID)
+-- Thêm cột khoá ngoại FK_iShopID --
+ALTER TABLE tbl_Orders ADD FK_iShopID INT
+ALTER TABLE tbl_Orders ADD CONSTRAINT FK_Orders_Stores FOREIGN KEY (FK_iShopID) REFERENCES tbl_Stores (PK_iStoreID)
 
 ------------------------- TẠO BẢNG CHI TIẾT HÀNG --------------------------
 CREATE TABLE tbl_OrderDetails(
