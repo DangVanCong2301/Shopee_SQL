@@ -524,16 +524,15 @@ GO
 -- Thủ tục tạo tài khoản--
 ALTER PROC sp_InsertUser
     @FK_iRoleID INT,
-    @sName NVARCHAR(100),
+    @sUserName NVARCHAR(100),
     @sEmail NVARCHAR(100),
-    @sAddress NVARCHAR(100),
     @dCreateTime DATETIME,
     @sPassword NVARCHAR(100)
 AS
 BEGIN
-    INSERT INTO tbl_Users (FK_iRoleID, sName, sEmail, sAddress, dCreateTime, sPassword) VALUES (@FK_iRoleID, @sName, @sEmail, @sAddress, @dCreateTime, @sPassword)
+    INSERT INTO tbl_Users (FK_iRoleID, sUserName, sEmail, dCreateTime, sPassword) VALUES (@FK_iRoleID, @sUserName, @sEmail, @dCreateTime, @sPassword)
 END
-EXEC sp_InsertUser 1, N'Mạnh Cường', 'cuong@gmail.com', N'Hà Nội', '23/01/2024', '12345678'
+EXEC sp_InsertUser 1, N'Mạnh Cường', 'Kiều Mạnh Cường', '23/01/2024', '1'
 GO
 select * from tbl_Users
 update tbl_Users set sName = N'Admin' WHERE PK_iUserID = 10
@@ -582,16 +581,6 @@ BEGIN
 END
 EXEC sp_UpdateUser 10, 2
 GO
-
---- Thủ tục lấy thông tin tài khoản bằng mã ---
-CREATE PROC sp_GetUserInfoByID
-    @PK_iUserID INT
-AS
-BEGIN
-    SELECT * FROM tbl_Users WHERE PK_iUserID = @PK_iUserID
-END
-EXEC sp_GetUserInfoByID 10
-GO
 ------------------------------------------------------
 
 --- Thủ tục cập nhật thông tin hồ sơ ---
@@ -618,7 +607,39 @@ BEGIN
 END
 EXEC sp_GetPasswordAccountByEmail 'cuong@gmail.com'
 GO
+
+-- Thủ tục lấy mã tài khoản với email --
+CREATE PROC sp_GetUserIDAccountByEmail
+    @sEmail NVARCHAR(100)
+AS
+BEGIN
+    SELECT * FROM tbl_Users WHERE sEmail = @sEmail
+END
+EXEC sp_GetPasswordAccountByEmail 'cuong@gmail.com'
+GO
 ------------------------------------------------------
+-------------------------------------------------------- THÔNG TIN TÀI KHOẢN -------------------------------------------------------------------------
+--- Thủ tục thêm thông tin tài khoản ---
+CREATE PROC sp_InsertUserInfo
+    @FK_iUserID INT
+AS
+BEGIN 
+    INSERT INTO tbl_Users_Info (FK_iUserID) VALUES (@FK_iUserID)
+END
+EXEC sp_InsertUserInfo 16
+GO
+--- Thủ tục lấy thông tin tài khoản bằng mã ---
+ALTER PROC sp_GetUserInfoByID
+    @PK_iUserID INT
+AS
+BEGIN
+    SELECT * FROM tbl_Users_Info
+    INNER JOIN tbl_Users ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+     WHERE
+     PK_iUserID = 16
+END
+EXEC sp_GetUserInfoByID 10
+GO
 
 -------------------------------------------------------- ĐỊA CHỈ NGƯỜI DÙNG ---------------------------------------------------------------
 -- Thủ tục kiểm tra xem tài khoản người dùng đã thiết lập địa chỉ hay chưa --
@@ -940,13 +961,15 @@ EXEC sp_UpdatePaymentsType 1, 10
 GO
 
 -- Thủ tục lấy phương thức thanh toán của tài khoản
-CREATE PROC sp_GetPaymentsTypeByUserID
+ALTER PROC sp_GetPaymentsTypeByUserID
+    @iUserID INT
 AS
 BEGIN
     SELECT PK_iPaymentID,  sPaymentName, sPaymentImage FROM tbl_PaymentsType 
-    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.PK_iPaymentTypeID 
-    WHERE tbl_PaymentsType.iUserID = 2
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID 
+    WHERE tbl_PaymentsType.iUserID = @iUserID
 END
+EXEC sp_GetPaymentsTypeByUserID 10
 GO
 -------------------------------------------------------- ĐẶT HÀNG ------------------------------------------------------------
 -----Thủ tục thêm đơn hàng-----

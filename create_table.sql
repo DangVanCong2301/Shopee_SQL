@@ -10,19 +10,28 @@ go
 CREATE TABLE tbl_Users (
     PK_iUserID INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
     FK_iRoleID INT,
-    sName NVARCHAR(100),
-    sAddress NVARCHAR(100),
+    sUserName NVARCHAR(100),
     sEmail NVARCHAR(100),
-    dDateBirth DATETIME,
-    sPhone NVARCHAR(20),
-    dCreateTime DATETIME,
-    dUpdateTime DATETIME,
-    dDeleteTime DATETIME
+    dCreateTime DATETIME
 )
 GO
 ALTER TABLE tbl_Users ADD CONSTRAINT FK_iRoleID FOREIGN KEY (FK_iRoleID) REFERENCES tbl_Roles
 ALTER TABLE tbl_Users ADD sPassword NVARCHAR(100)
-ALTER TABLE tbl_Users DROP COLUMN sPhone -- Xoá tên cột
+ALTER TABLE tbl_Users DROP COLUMN sFullName -- Xoá tên cột 
+ALTER TABLE tbl_Users DROP COLUMN dDateBirth -- Xoá tên cột
+
+------------------------- TẠO BẢNG THÔNG TIN NGƯỜI DÙNG --------------------------
+CREATE TABLE tbl_Users_Info (
+    PK_iUserInfoID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    FK_iUserID INT,
+    sFullName NVARCHAR(100),
+    dDateBirth DATETIME,
+    dUpdateTime DATETIME,
+    iGender INT,
+    sImageProfile NVARCHAR(100)
+)
+GO
+ALTER TABLE tbl_Users_Info ADD CONSTRAINT FK_UsersInfo_Users FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users(PK_iUserID)
 
 ------------------------- TẠO BẢNG ĐỊA CHỈ NGƯỜI DÙNG --------------------------
 CREATE TABLE tbl_Addresses (
