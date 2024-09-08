@@ -17,8 +17,8 @@ CREATE TABLE tbl_Users (
 GO
 ALTER TABLE tbl_Users ADD CONSTRAINT FK_iRoleID FOREIGN KEY (FK_iRoleID) REFERENCES tbl_Roles
 ALTER TABLE tbl_Users ADD sPassword NVARCHAR(100)
-ALTER TABLE tbl_Users DROP COLUMN sFullName -- Xoá tên cột 
-ALTER TABLE tbl_Users DROP COLUMN dDateBirth -- Xoá tên cột
+ALTER TABLE tbl_Users DROP COLUMN sImageProfile -- Xoá tên cột 
+ALTER TABLE tbl_Users DROP COLUMN iGender -- Xoá tên cột
 
 ------------------------- TẠO BẢNG THÔNG TIN NGƯỜI DÙNG --------------------------
 CREATE TABLE tbl_Users_Info (

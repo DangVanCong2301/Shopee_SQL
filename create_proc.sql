@@ -615,10 +615,21 @@ AS
 BEGIN
     SELECT * FROM tbl_Users WHERE sEmail = @sEmail
 END
-EXEC sp_GetPasswordAccountByEmail 'cuong@gmail.com'
+EXEC sp_GetUserIDAccountByEmail 'vinh@gmail.com'
 GO
 ------------------------------------------------------
 -------------------------------------------------------- THÔNG TIN TÀI KHOẢN -------------------------------------------------------------------------
+--- Thủ tục kiểm tra thông tin tài khoản người dùng có hay chưa ---
+CREATE PROC sp_CheckUserInfoByUserID
+    @FK_iUserID INT
+AS
+BEGIN
+    SELECT PK_iUserInfoID, FK_iUserID, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile FROM tbl_Users_Info 
+    INNER JOIN tbl_Users ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID 
+    WHERE tbl_Users_Info.FK_iUserID = @FK_iUserID
+END
+EXEC sp_CheckUserInfoByUserID 16
+GO
 --- Thủ tục thêm thông tin tài khoản ---
 CREATE PROC sp_InsertUserInfo
     @FK_iUserID INT
