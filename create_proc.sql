@@ -631,13 +631,18 @@ END
 EXEC sp_CheckUserInfoByUserID 16
 GO
 --- Thủ tục thêm thông tin tài khoản ---
-CREATE PROC sp_InsertUserInfo
-    @FK_iUserID INT
+ALTER PROC sp_InsertUserInfo
+    @FK_iUserID INT,
+    @sFullName NVARCHAR(100),
+    @iGender INT,
+    @dDateBirth DATETIME,
+    @dUpdateTime DATETIME,
+    @sImageProfile NVARCHAR(100)
 AS
 BEGIN 
-    INSERT INTO tbl_Users_Info (FK_iUserID) VALUES (@FK_iUserID)
+    SET DATEFORMAT dmy INSERT INTO tbl_Users_Info (FK_iUserID, sFullName, iGender, dDateBirth, dUpdateTime, sImageProfile) VALUES (@FK_iUserID, @sFullName, @iGender, @dDateBirth, @dUpdateTime, @sImageProfile)
 END
-EXEC sp_InsertUserInfo 16
+SET DATEFORMAT dmy EXEC sp_InsertUserInfo 16, N'Nguyễn Thị Vinh', 0, '20/2/2002', '9/9/2024', 'no_user.jpg'
 GO
 --- Thủ tục lấy thông tin tài khoản bằng mã ---
 ALTER PROC sp_GetUserInfoByID
