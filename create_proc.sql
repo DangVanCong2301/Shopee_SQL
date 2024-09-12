@@ -521,6 +521,16 @@ EXEC sp_SelectProductFavorites 10
 GO
 
 -------------------------------------------------------- TÀI KHOẢN -------------------------------------------------------------------------
+-- Thủ tục kiểm tra xem email tài khoản đã đăng ký hay chưa
+CREATE PROC sp_CheckEmailUserIsRegis
+    @sEmail NVARCHAR(100)
+AS
+BEGIN
+    SELECT * FROM tbl_Users WHERE sEmail = @sEmail
+END
+EXEC sp_CheckEmailUserIsRegis "cong@gmail.com"
+GO
+
 -- Thủ tục tạo tài khoản--
 ALTER PROC sp_InsertUser
     @FK_iRoleID INT,
@@ -584,17 +594,16 @@ GO
 ------------------------------------------------------
 
 --- Thủ tục cập nhật thông tin hồ sơ ---
-CREATE PROC sp_UpdateProfile
-    @PK_iUserID INT,
-    @sUserName NVARCHAR(100),
+ALTER PROC sp_UpdateProfile
+    @FK_iUserID INT,
     @sFullName NVARCHAR(100),
-    @sEmail NVARCHAR(100),
+	@dDateBirth DATETIME,
+	@dUpdateTime DATETIME,
     @iGender INT,
-    @DateBirth DATETIME,
     @sImageProfile NVARCHAR(100)
 AS
 BEGIN
-    UPDATE tbl_Users SET sUserName = @sUserName, sFullName = @sFullName, sEmail = @sEmail, iGender = @iGender, dDateBirth = @DateBirth, sImageProfile = @sImageProfile WHERE PK_iUserID = @PK_iUserID
+    UPDATE tbl_Users_Info SET sFullName = @sFullName, iGender = @iGender, dDateBirth = @dDateBirth, sImageProfile = @sImageProfile WHERE FK_iUserID = @FK_iUserID
 END
 GO
 
@@ -606,6 +615,17 @@ BEGIN
     SELECT * FROM tbl_Users WHERE sEmail = @sEmail
 END
 EXEC sp_GetPasswordAccountByEmail 'cuong@gmail.com'
+GO
+
+-- Thủ tục đổi mật khẩu tài khoản với mã --
+CREATE PROC sp_ChangePasswordByUserID
+    @PK_iUserID INT,
+    @sPassword NVARCHAR(100)
+AS
+BEGIN
+    UPDATE tbl_Users SET sPassword = @sPassword WHERE PK_iUserID = @PK_iUserID
+END
+EXEC sp_ChangePasswordByUserID 1, '123'
 GO
 
 -- Thủ tục lấy mã tài khoản với email --
@@ -628,7 +648,7 @@ BEGIN
     INNER JOIN tbl_Users ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID 
     WHERE tbl_Users_Info.FK_iUserID = @FK_iUserID
 END
-EXEC sp_CheckUserInfoByUserID 16
+EXEC sp_CheckUserInfoByUserID 3
 GO
 --- Thủ tục thêm thông tin tài khoản ---
 ALTER PROC sp_InsertUserInfo
@@ -646,15 +666,14 @@ SET DATEFORMAT dmy EXEC sp_InsertUserInfo 16, N'Nguyễn Thị Vinh', 0, '20/2/2
 GO
 --- Thủ tục lấy thông tin tài khoản bằng mã ---
 ALTER PROC sp_GetUserInfoByID
-    @PK_iUserID INT
+    @FK_iUserID INT
 AS
 BEGIN
-    SELECT * FROM tbl_Users_Info
+    SELECT PK_iUserInfoID, FK_iUserID, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile FROM tbl_Users_Info
     INNER JOIN tbl_Users ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
-     WHERE
-     PK_iUserID = 16
+    WHERE PK_iUserID = @FK_iUserID
 END
-EXEC sp_GetUserInfoByID 10
+EXEC sp_GetUserInfoByID 8
 GO
 
 -------------------------------------------------------- ĐỊA CHỈ NGƯỜI DÙNG ---------------------------------------------------------------
