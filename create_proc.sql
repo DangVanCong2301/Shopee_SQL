@@ -1,3 +1,15 @@
+-------------------------------------------------------- TÀI KHOẢN NGƯỜI BÁN -------------------------------------------------------------------------
+-- Thủ tục đăng nhập tài khoản người bán --
+CREATE PROC sp_LoginAccountSeller
+    @sSellerPhone NVARCHAR(20),
+    @sSellerPassword NVARCHAR(100)
+AS
+BEGIN
+    SELECT * FROM tbl_Sellers WHERE sSellerPhone = @sSellerPhone AND sSellerPassword = @sSellerPassword
+END
+EXEC sp_LoginAccountSeller '0347797502', 'jNf5bbOGFps='
+GO
+
 -------------------------------------------------------- CỬA HÀNG -------------------------------------------------------------------------
 -- Thủ tục lấy cửa hàng --
 CREATE PROC sp_GetStores

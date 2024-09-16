@@ -75,6 +75,25 @@ ALTER TABLE tbl_Users
 ALTER COLUMN bGender INT
 GO
 
+------------------------- TẠO BẢNG TÀI KHOẢN NGƯỜI BÁN --------------------------
+CREATE TABLE tbl_Sellers (
+    PK_iSellerID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    sSellerPhone NVARCHAR(20),
+    sSellerUsername NVARCHAR(100),
+    sSellerPassword NVARCHAR(100)
+)
+GO
+
+------------------------- TẠO BẢNG THÔNG TIN NGƯỜI BÁN --------------------------
+CREATE TABLE tbl_Portals (
+    PK_iPortalID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    FK_iSellerID INT,
+    sCCCD NVARCHAR(20),
+    sSellerAddress NVARCHAR(100)
+    CONSTRAINT FK_Portals_Sellers FOREIGN KEY (FK_iSellerID) REFERENCES tbl_Sellers (PK_iSellerID)
+)
+GO
+
 ------------------------- TẠO BẢNG CỬA HÀNG --------------------------
 CREATE TABLE tbl_Stores (
     PK_iStoreID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
@@ -88,6 +107,8 @@ ALTER TABLE tbl_Stores ADD sImageBackground NVARCHAR(100)
 ALTER TABLE tbl_Stores ADD sDesc NVARCHAR(MAX)
 ALTER TABLE tbl_Stores ADD sImageMall NVARCHAR(100)
 ALTER TABLE tbl_Stores ADD sStoreUsername NVARCHAR(100)
+ALTER TABLE tbl_Stores ADD FK_iSellerID INT
+ALTER TABLE tbl_Stores ADD CONSTRAINT FK_Stores_Sellers FOREIGN KEY (FK_iSellerID) REFERENCES tbl_Sellers(PK_iSellerID)
 
 ------------------------- TẠO BẢNG BANNER CỬA HÀNG --------------------------
 CREATE TABLE tbl_BannerShops (
