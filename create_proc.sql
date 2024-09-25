@@ -10,6 +10,47 @@ END
 EXEC sp_LoginAccountSeller '0347797502', 'jNf5bbOGFps='
 GO
 
+-- Thủ tục lấy tài khoản người bán bằng mã -- 
+CREATE PROC sp_GetSellerAccountByID
+    @PK_iSellerID INT
+AS
+BEGIN
+    SELECT * FROM tbl_Sellers WHERE PK_iSellerID = @PK_iSellerID
+END
+EXEC sp_GetSellerAccountByID 1
+GO
+
+-- Thủ tục lấy lại mật khẩu tài khoản người bán bằng sđt --
+CREATE PROC sp_GetPasswordSellerAccountByPhone
+    @sSellerPhone NVARCHAR(20)
+AS
+BEGIN
+    SELECT * FROM tbl_Sellers WHERE sSellerPhone = @sSellerPhone
+END
+EXEC sp_GetPasswordSellerAccountByPhone '0347797502'
+GO
+
+-- Kiểm tra tài khoản người bán với mã và mật khẩu --
+CREATE PROC sp_CheckSellerAccountByIDAndPass
+    @PK_iSellerID INT,
+    @sSellerPassword NVARCHAR(100)
+AS
+BEGIN
+    SELECT * FROM tbl_Sellers WHERE PK_iSellerID = @PK_iSellerID AND sSellerPassword = @sSellerPassword
+END
+EXEC sp_CheckSellerAccountByIDAndPass 1, 'jNf5bbOGFps='
+GO
+
+-- Đổi mật khẩu tài khoản người bán --
+CREATE PROC sp_ChangePasswordSellerAccount
+    @PK_iSellerID INT,
+    @sSellerPassword NVARCHAR(100)
+AS
+BEGIN 
+    UPDATE tbl_Sellers SET sSellerPassword = @sSellerPassword WHERE PK_iSellerID = @PK_iSellerID
+END
+GO
+
 -------------------------------------------------------- CỬA HÀNG -------------------------------------------------------------------------
 -- Thủ tục lấy cửa hàng --
 CREATE PROC sp_GetStores
@@ -200,6 +241,18 @@ END
 EXEC sp_GetTop10SuggestProductsByShopID 2 
 -- Đổi tên
 EXEC sp_rename 'sp_Get10SuccessProductsByShopID', 'sp_GetTop10SuggestProductsByShopID'
+GO
+
+-- Thủ tục lấy cửa hàng theo mã tài khoản người bán --
+CREATE PROC sp_GetShopBySellerID
+    @FK_iSellerID INT
+AS
+BEGIN
+    SELECT PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc, sImageMall, sStoreUsername FROM tbl_Stores 
+    INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_Stores.FK_iSellerID
+    WHERE FK_iSellerID = @FK_iSellerID
+END
+EXEC sp_GetShopBySellerID 3
 GO
 
 -------------------------------------------------------- BANNER - SLIDER CỬA HÀNG -------------------------------------------------------------------------
@@ -694,8 +747,9 @@ ALTER PROC sp_CheckAddressAccount
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT PK_iAddressID, FK_iUserID, tbl_Users.sFullName, sPhone, sAddress, iDefault FROM tbl_Addresses 
+    SELECT PK_iAddressID, tbl_Addresses.FK_iUserID, tbl_Users_Info.sFullName, sPhone, sAddress, iDefault FROM tbl_Addresses 
     INNER JOIN tbl_Users ON tbl_Addresses.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users.PK_iUserID = tbl_Users_Info.FK_iUserID
     WHERE tbl_Addresses.FK_iUserID = @FK_iUserID
 END
 EXEC sp_CheckAddressAccount 1
@@ -1041,14 +1095,15 @@ ALTER PROC sp_GetOrderByID
     @dDate DATETIME
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
     FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
     INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
     INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
-    WHERE FK_iUserID = @FK_iUserID AND FK_iShopID = @FK_iShopID AND dDate = @dDate
+    WHERE tbl_Orders.FK_iUserID = @FK_iUserID AND FK_iShopID = @FK_iShopID AND dDate = @dDate
 END
 SET DATEFORMAT dmy EXEC sp_GetOrderByID 2, 3, '29/7/2024'
 GO
@@ -1058,26 +1113,28 @@ ALTER PROC sp_GetOrderByUserIDWaitSettlement
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
     FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
     INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
     INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
-    WHERE FK_iUserID = @FK_iUserID AND tbl_Order_Status.iOrderStatusCode = 0
+    WHERE tbl_Orders.FK_iUserID = @FK_iUserID AND tbl_Order_Status.iOrderStatusCode = 0
 END
-EXEC sp_GetOrderByUserIDWaitSettlement 10
+EXEC sp_GetOrderByUserIDWaitSettlement 2
 GO
 
--- Thủ tục lấy đơn hàng ở trạng thái chờ xác nhận
+-- Thủ tục lấy tất cả đơn hàng ở trạng thái chờ xác nhận -- 
 ALTER PROC sp_GetOrderWaitSettlement
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
     INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
     INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
     WHERE tbl_Order_Status.iOrderStatusCode = 0
@@ -1085,6 +1142,84 @@ END
 EXEC sp_GetOrderWaitSettlement
 GO
 
+-- Thủ tục lấy tất cả đơn hàng ở trạng thái chờ xác nhận theo mã cửa hàng -- 
+CREATE PROC sp_GetOrderWaitSettlementByShopID
+    @FK_iShopID INT
+AS
+BEGIN
+    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    WHERE tbl_Order_Status.iOrderStatusCode = 0 AND FK_iShopID = @FK_iShopID
+END
+EXEC sp_GetOrderWaitSettlement
+GO
+
+-- Thủ tục lấy tất cả đơn hàng ở trạng thái chờ lấy hàng theo mã cửa hàng -- 
+CREATE PROC sp_GetOrderWaitPickupByShopID
+    @FK_iShopID INT
+AS
+BEGIN
+    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    WHERE tbl_Order_Status.iOrderStatusCode = 6 AND FK_iShopID = @FK_iShopID
+END
+EXEC sp_GetOrderWaitSettlement
+GO
+
+-- Thủ tục lấy tất cả đơn hàng ở trạng thái chờ lấy hàng -- 
+ALTER PROC sp_GetOrderWaitPickup
+AS
+BEGIN
+    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    WHERE tbl_Order_Status.iOrderStatusCode = 4
+END
+EXEC sp_GetOrderWaitPickup
+GO
+
+-- Thủ tục lấy đơn hàng ở trạng thái chờ xác nhận với mã đơn hàng -- 
+CREATE PROC sp_GetOrderWaitSettlementByOrderID
+    @PK_iOrderID INT
+AS
+BEGIN
+    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    WHERE PK_iOrderID = @PK_iOrderID AND tbl_Order_Status.iOrderStatusCode = 0
+END
+EXEC sp_GetOrderWaitSettlementByOrderID 2
+GO
+
+-- Thủ tục xác nhận đơn hàng về chờ lấy hàng --
+CREATE PROC sp_ConfirmOrderAboutPickup
+    @PK_iOrderID INT,
+    @PK_iUserID INT
+AS
+BEGIN
+    UPDATE tbl_Orders SET FK_iOrderStatusID = 6 WHERE PK_iOrderID = @PK_iOrderID AND FK_iUserID = @PK_iUserID
+END
+GO
+
+-------------------------------------------------------- CHI TIẾT ĐẶT HÀNG ------------------------------------------------------------
 -----Thủ tục thêm sản phẩm vào chi tiết đơn hàng -----
 ALTER PROC sp_InserProductIntoOrderDetail
     @PK_iOrderID INT,
@@ -1156,6 +1291,26 @@ END
 EXEC sp_GetProductsOrderByUserIDWaitSettlement 10
 SELECT * FROM tbl_Order_Status
 SELECT * FROM tbl_Orders
+GO
+
+-- Thủ tục lấy chi tiết đơn hàng theo mã ở trạng thái chờ xác nhận --
+CREATE PROC sp_GetOrderDetailWaitSettlementByOrderID
+    @PK_iOrderID INT
+AS
+BEGIN
+    SELECT tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode, tbl_Orders.dDate FROM tbl_OrderDetails
+    INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_OrderDetails.PK_iProductID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID 
+    INNER JOIN tbl_Discounts ON tbl_Discounts.PK_iDiscountID = tbl_Products.FK_iDiscountID
+    INNER JOIN tbl_Categories ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Orders ON tbl_Orders.PK_iOrderID = tbl_OrderDetails.PK_iOrderID 
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    WHERE tbl_Orders.PK_iOrderID = @PK_iOrderID AND tbl_Order_Status.iOrderStatusCode = 0
+END
+-- Đổi tên
+EXEC sp_rename 'sp_GetOrderWaitSettlementByOrderID', 'sp_GetOrderDetailWaitSettlementByOrderID'
+EXEC sp_GetOrderWaitSettlementByOrderID 2
 GO
 
 
