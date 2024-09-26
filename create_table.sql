@@ -323,3 +323,22 @@ ALTER TABLE tbl_OrderDetails ADD dMoney FLOAT
 -- Thay đổi giá trị cột
 ALTER TABLE tbl_OrderDetails ALTER COLUMN dUnitPrice FLOAT
 EXEC sp_rename 'tbl_OrderDetails.iUnitPrice', 'dUnitPrice', 'COLUMN'; -- Đổi tên cột trong 1 bảng
+
+------------------------- TẠO BẢNG ĐƠN VỊ VẬN CHUYỂN --------------------------
+CREATE TABLE tbl_ShippingUnits (
+    PK_iShippingUnitID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    sShippingUnitName NVARCHAR(100),
+    sShippingUnitLogo NVARCHAR(100)
+)
+GO
+
+------------------------- TẠO BẢNG ĐƠN ĐƠN HÀNG GIAO --------------------------
+CREATE TABLE tbl_ShippingOrders (
+    PK_iShippingOrderID INT IDENTITY(1, 1) NOT NULL PRIMARY KEY,
+    FK_iShippingUnitID INT,
+    FK_iOrderID INT,
+    dShippingTime DATETIME
+    CONSTRAINT FK_ShippingOrders_ShippingUnits FOREIGN KEY (FK_iShippingUnitID) REFERENCES tbl_ShippingUnits (PK_iShippingUnitID),
+    CONSTRAINT FK_ShippingOrders_Orders FOREIGN KEY (FK_iOrderID) REFERENCES tbl_Orders (PK_iOrderID)
+)
+GO
