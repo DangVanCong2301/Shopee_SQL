@@ -51,6 +51,20 @@ BEGIN
 END
 GO
 
+-------------------------------------------------------- THÔNG TIN TÀI KHOẢN NGƯỜI BÁN ----------------------------------------------------
+ALTER PROC sp_GetSellerInfoBySellerID
+    @PK_iSellerID INT
+AS
+BEGIN
+    SELECT PK_iSellerID, PK_iStoreID, sSellerUsername, sSellerPhone, sStoreName, sSellerAddress FROM tbl_Portals 
+    INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_Portals.FK_iSellerID
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
+    WHERE PK_iSellerID = @PK_iSellerID
+END
+EXEC sp_rename 'sp_getSellerInfoBySellerID', 'sp_GetSellerInfoBySellerID'
+EXEC sp_GetSellerInfoBySellerID 3
+GO
+
 -------------------------------------------------------- CỬA HÀNG -------------------------------------------------------------------------
 -- Thủ tục lấy cửa hàng --
 CREATE PROC sp_GetStores
@@ -314,16 +328,18 @@ GO
 ALTER PROC sp_InsertCategory
     @sCategoryName NVARCHAR(100),
     @sCategoryImage NVARCHAR(100),
-    @sCategoryDescription NVARCHAR(MAX)
-    --@iIsVisible BIT 
+    @sCategoryDescription NVARCHAR(MAX),
+    @iIsVisible INT,
+    @FK_iStoreID INT,
+    @FK_iParentCategoryID INT
 AS
 BEGIN
-    INSERT INTO tbl_Categories (sCategoryName, sCategoryImage, sCategoryDescription) VALUES (@sCategoryName, @sCategoryImage, @sCategoryDescription)
+    INSERT INTO tbl_Categories (sCategoryName, sCategoryImage, sCategoryDescription, iIsVisible, FK_iStoreID, FK_iParentCategoryID) VALUES (@sCategoryName, @sCategoryImage, @sCategoryDescription, @iIsVisible, @FK_iStoreID, @FK_iParentCategoryID)
 END
-EXEC sp_InsertCategory N'Ô tô', '', N'abc'
+EXEC sp_InsertCategory N'Trang điểm mắt', '', N'Trang điểm mắt', 1, 3, 3
 GO
 
--- Thủ tục xoá danh mục --
+-- Thủ tục xoá danh mục theo mã --
 CREATE PROC sp_DelelteCategoryByID
     @PK_iCategoryID INT
 AS
@@ -332,7 +348,7 @@ BEGIN
 END
 GO
 
--- Thủ tục xoá danh mục--
+-- Thủ tục lấy danh mục theo mã --
 CREATE PROC sp_SelectCategoryByID
     @PK_iCategoryID INT
 AS
@@ -341,7 +357,7 @@ BEGIN
 END
 go
 
--- Thủ tục xoá danh mục--
+-- Thủ tục cập nhật danh mục--
 CREATE PROC sp_UpdateCategoryByID
     @PK_iCategoryID INT,
      @sCategoryName NVARCHAR(100),
@@ -1160,7 +1176,7 @@ EXEC sp_GetOrderWaitSettlement
 GO
 
 -- Thủ tục lấy tất cả đơn hàng ở trạng thái chờ lấy hàng theo mã cửa hàng -- 
-CREATE PROC sp_GetOrderWaitPickupByShopID
+ALTER PROC sp_GetOrderWaitPickupByShopID
     @FK_iShopID INT
 AS
 BEGIN
@@ -1171,9 +1187,9 @@ BEGIN
     INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
     INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
     INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
-    WHERE tbl_Order_Status.iOrderStatusCode = 6 AND FK_iShopID = @FK_iShopID
+    WHERE tbl_Order_Status.iOrderStatusCode = 4 AND FK_iShopID = @FK_iShopID
 END
-EXEC sp_GetOrderWaitSettlement
+	
 GO
 
 -- Thủ tục lấy tất cả đơn hàng ở trạng thái chờ lấy hàng -- 
@@ -1311,6 +1327,19 @@ END
 -- Đổi tên
 EXEC sp_rename 'sp_GetOrderWaitSettlementByOrderID', 'sp_GetOrderDetailWaitSettlementByOrderID'
 EXEC sp_GetOrderWaitSettlementByOrderID 2
+GO
+
+-------------------------------------------------------- ĐƠN HÀNG GIAO ------------------------------------------------------------
+-- Thủ tục tạo đơn hàng giao --
+CREATE PROC sp_InsertShippingOrder
+    @FK_iShippingUnitID INT,
+    @FK_iOrderID INT,
+    @ShippingTime DATETIME
+AS
+BEGIN
+    INSERT INTO tbl_ShippingOrders (FK_iShippingUnitID, FK_iOrderID, dShippingTime) VALUES (@FK_iShippingUnitID, @FK_iOrderID, @ShippingTime)
+END
+SET DATEFORMAT dmy EXEC sp_InsertShippingOrder 1, 1002, '26/9/2024'
 GO
 
 
