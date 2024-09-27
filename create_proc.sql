@@ -836,6 +836,19 @@ END
 EXEC sp_GetAddressAccountByID 2, 2
 GO
 
+--Thủ tục lấy địa chỉ người dùng với mã đơn hàng --
+CREATE PROC sp_GetAddressAccountByOrderID
+    @PK_iOrderID INT
+AS
+BEGIN
+    SELECT PK_iAddressID, tbl_Orders.FK_iUserID, tbl_Users_Info.sFullName, sPhone, sAddress, iDefault FROM tbl_Addresses
+    INNER JOIN tbl_Orders ON tbl_Orders.FK_iUserID = tbl_Addresses.FK_iUserID
+	INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Orders.FK_iUserID
+    WHERE PK_iOrderID = @PK_iOrderID AND iDefault = 1
+END
+EXEC sp_GetAddressAccountByOrderID 1
+GO
+
 ----- ĐỊA CHỈ CHỌN ----
 -- Lấy danh sách thành phố --
 CREATE PROC sp_GetCities
@@ -1225,6 +1238,43 @@ END
 EXEC sp_GetOrderWaitSettlementByOrderID 2
 GO
 
+-- Thủ tục lấy đơn hàng ở trạng thái chờ lấy hàng với mã đơn hàng -- 
+CREATE PROC sp_GetOrderWaitDeliveryByOrderID
+    @PK_iOrderID INT
+AS
+BEGIN
+    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    WHERE PK_iOrderID = @PK_iOrderID AND tbl_Order_Status.iOrderStatusCode = 2
+END
+EXEC sp_GetOrderWaitSettlementByOrderID 2
+GO
+
+-- Thủ tục lấy đơn hàng ở trạng thái đã xử lý/chờ giao hàng với mã cửa hàng -- 
+ALTER PROC sp_GetOrderProcessedByShopID
+    @FK_iShopID INT
+AS
+BEGIN
+    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    INNER JOIN tbl_ShippingOrders ON tbl_ShippingOrders.FK_iOrderID = tbl_Orders.PK_iOrderID
+    WHERE PK_iStoreID = @FK_iShopID AND tbl_Order_Status.iOrderStatusCode = 2
+END
+-- Đổi tên
+EXEC sp_rename 'sp_GetOrderProcessedByShippingOrderID', 'sp_GetOrderProcessedByShopID'
+EXEC sp_GetOrderProcessedByShopID 3
+GO
+
 -- Thủ tục xác nhận đơn hàng về chờ lấy hàng --
 CREATE PROC sp_ConfirmOrderAboutPickup
     @PK_iOrderID INT,
@@ -1232,6 +1282,15 @@ CREATE PROC sp_ConfirmOrderAboutPickup
 AS
 BEGIN
     UPDATE tbl_Orders SET FK_iOrderStatusID = 6 WHERE PK_iOrderID = @PK_iOrderID AND FK_iUserID = @PK_iUserID
+END
+GO
+-- Thủ tục xác nhận đơn hàng về chờ giao hàng --
+CREATE PROC sp_ConfirmOrderAboutWaitDelivery
+    @PK_iOrderID INT,
+    @PK_iUserID INT
+AS
+BEGIN
+    UPDATE tbl_Orders SET FK_iOrderStatusID = 4 WHERE PK_iOrderID = @PK_iOrderID AND FK_iUserID = @PK_iUserID
 END
 GO
 
@@ -1329,6 +1388,25 @@ EXEC sp_rename 'sp_GetOrderWaitSettlementByOrderID', 'sp_GetOrderDetailWaitSettl
 EXEC sp_GetOrderWaitSettlementByOrderID 2
 GO
 
+-- Thủ tục lấy chi tiết đơn hàng theo mã ở trạng thái chờ giao hàng --
+CREATE PROC sp_GetOrderDetailWaitDeliveyByOrderID
+    @PK_iOrderID INT
+AS
+BEGIN
+    SELECT tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode, tbl_Orders.dDate FROM tbl_OrderDetails
+    INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_OrderDetails.PK_iProductID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID 
+    INNER JOIN tbl_Discounts ON tbl_Discounts.PK_iDiscountID = tbl_Products.FK_iDiscountID
+    INNER JOIN tbl_Categories ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Orders ON tbl_Orders.PK_iOrderID = tbl_OrderDetails.PK_iOrderID 
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    WHERE tbl_Orders.PK_iOrderID = @PK_iOrderID AND tbl_Order_Status.iOrderStatusCode = 2
+END
+-- Đổi tên
+EXEC sp_GetOrderWaitSettlementByOrderID 2
+GO
+
 -------------------------------------------------------- ĐƠN HÀNG GIAO ------------------------------------------------------------
 -- Thủ tục tạo đơn hàng giao --
 CREATE PROC sp_InsertShippingOrder
@@ -1341,6 +1419,38 @@ BEGIN
 END
 SET DATEFORMAT dmy EXEC sp_InsertShippingOrder 1, 1002, '26/9/2024'
 GO
+
+-- Thủ tục lấy đơn hàng giao theo mã đơn hàng -- 
+CREATE PROC sp_GetShippingOrderByOrderID
+    @FK_iOrderID INT
+AS
+BEGIN
+    SELECT * FROM tbl_ShippingOrders WHERE FK_iOrderID = @FK_iOrderID
+END
+GO
+
+-- Thủ tục lấy đơn hàng giao theo mã  -- 
+CREATE PROC sp_GetShippingOrderByID
+    @PK_iShippingOrderID INT
+AS
+BEGIN
+    SELECT * FROM tbl_ShippingOrders WHERE PK_iShippingOrderID = @PK_iShippingOrderID
+END
+GO
+
+-- Thủ tục lấy tất cả đơn hàng giao theo mã cửa hang --
+CREATE PROC sp_GetShippingOrderByShopID
+    @FK_iShopID INT
+AS
+BEGIN
+    SELECT PK_iShippingOrderID, FK_iShippingUnitID, FK_iOrderID, dShippingTime FROM tbl_ShippingOrders
+    INNER JOIN tbl_Orders ON tbl_Orders.PK_iOrderID = tbl_ShippingOrders.FK_iOrderID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    WHERE FK_iShopID = @FK_iShopID
+END
+EXEC sp_GetShippingOrderByShopID 3
+GO
+
 
 
 
