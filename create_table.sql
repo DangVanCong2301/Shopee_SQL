@@ -32,6 +32,7 @@ CREATE TABLE tbl_Users_Info (
 )
 GO
 ALTER TABLE tbl_Users_Info ADD CONSTRAINT FK_UsersInfo_Users FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users(PK_iUserID)
+ALTER TABLE tbl_Users_Info ADD iIsLock INT
 
 ------------------------- TẠO BẢNG ĐỊA CHỈ NGƯỜI DÙNG --------------------------
 CREATE TABLE tbl_Addresses (
