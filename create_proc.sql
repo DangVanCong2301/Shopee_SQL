@@ -720,12 +720,21 @@ EXEC sp_GetUserIDAccountByEmail 'vinh@gmail.com'
 GO
 ------------------------------------------------------
 -------------------------------------------------------- THÔNG TIN TÀI KHOẢN -------------------------------------------------------------------------
+--- Thủ tục lấy ra tất cả tài khoản người dùng ---
+CREATE PROC sp_GetUsersInfo
+AS
+BEGIN
+    SELECT PK_iUserInfoID, FK_iUserID, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile, iIsLock FROM tbl_Users_Info 
+    INNER JOIN tbl_Users ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID 
+END
+EXEC sp_GetUsersInfo
+GO
 --- Thủ tục kiểm tra thông tin tài khoản người dùng có hay chưa ---
-CREATE PROC sp_CheckUserInfoByUserID
+ALTER PROC sp_CheckUserInfoByUserID
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT PK_iUserInfoID, FK_iUserID, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile FROM tbl_Users_Info 
+    SELECT PK_iUserInfoID, FK_iUserID, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile, iIsLock FROM tbl_Users_Info 
     INNER JOIN tbl_Users ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID 
     WHERE tbl_Users_Info.FK_iUserID = @FK_iUserID
 END
@@ -738,19 +747,20 @@ ALTER PROC sp_InsertUserInfo
     @iGender INT,
     @dDateBirth DATETIME,
     @dUpdateTime DATETIME,
-    @sImageProfile NVARCHAR(100)
+    @sImageProfile NVARCHAR(100),
+	@iIsLock INT
 AS
 BEGIN 
-    SET DATEFORMAT dmy INSERT INTO tbl_Users_Info (FK_iUserID, sFullName, iGender, dDateBirth, dUpdateTime, sImageProfile) VALUES (@FK_iUserID, @sFullName, @iGender, @dDateBirth, @dUpdateTime, @sImageProfile)
+    SET DATEFORMAT dmy INSERT INTO tbl_Users_Info (FK_iUserID, sFullName, iGender, dDateBirth, dUpdateTime, sImageProfile, iIsLock) VALUES (@FK_iUserID, @sFullName, @iGender, @dDateBirth, @dUpdateTime, @sImageProfile, @iIsLock)
 END
-SET DATEFORMAT dmy EXEC sp_InsertUserInfo 16, N'Nguyễn Thị Vinh', 0, '20/2/2002', '9/9/2024', 'no_user.jpg'
+SET DATEFORMAT dmy EXEC sp_InsertUserInfo 16, N'Nguyễn Thị Vinh', 0, '20/2/2002', '9/9/2024', 'no_user.jpg', 0
 GO
 --- Thủ tục lấy thông tin tài khoản bằng mã ---
 ALTER PROC sp_GetUserInfoByID
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT PK_iUserInfoID, FK_iUserID, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile FROM tbl_Users_Info
+    SELECT PK_iUserInfoID, FK_iUserID, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile, iIsLock FROM tbl_Users_Info
     INNER JOIN tbl_Users ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
     WHERE PK_iUserID = @FK_iUserID
 END
