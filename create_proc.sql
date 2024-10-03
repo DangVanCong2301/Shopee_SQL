@@ -52,6 +52,7 @@ END
 GO
 
 -------------------------------------------------------- THÔNG TIN TÀI KHOẢN NGƯỜI BÁN ----------------------------------------------------
+-- Lấy thông tin người bán với mã
 ALTER PROC sp_GetSellerInfoBySellerID
     @PK_iSellerID INT
 AS
@@ -63,6 +64,20 @@ BEGIN
 END
 EXEC sp_rename 'sp_getSellerInfoBySellerID', 'sp_GetSellerInfoBySellerID'
 EXEC sp_GetSellerInfoBySellerID 3
+GO
+
+-- Lấy thông tin người bán với mã đơn hàng
+CREATE PROC sp_GetSellerInfoByOrderID
+    @PK_iOrderID INT
+AS
+BEGIN
+    SELECT PK_iSellerID, PK_iStoreID, sSellerUsername, sSellerPhone, sStoreName, sSellerAddress FROM tbl_Portals 
+    INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_Portals.FK_iSellerID
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
+    INNER JOIN tbl_Orders ON tbl_Orders.FK_iShopID = tbl_Stores.PK_iStoreID
+    WHERE PK_iOrderID = @PK_iOrderID
+END
+EXEC sp_GetSellerInfoByOrderID 3
 GO
 
 -------------------------------------------------------- CỬA HÀNG -------------------------------------------------------------------------
@@ -721,11 +736,12 @@ GO
 ------------------------------------------------------
 -------------------------------------------------------- THÔNG TIN TÀI KHOẢN -------------------------------------------------------------------------
 --- Thủ tục lấy ra tất cả tài khoản người dùng ---
-CREATE PROC sp_GetUsersInfo
+ALTER PROC sp_GetUsersInfo
 AS
 BEGIN
-    SELECT PK_iUserInfoID, FK_iUserID, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile, iIsLock FROM tbl_Users_Info 
+    SELECT PK_iUserInfoID, FK_iUserID, sDescription, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile, iIsLock FROM tbl_Users_Info 
     INNER JOIN tbl_Users ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID 
+    INNER JOIN tbl_Roles ON tbl_Roles.PK_iRoleID = tbl_Users.FK_iRoleID
 END
 EXEC sp_GetUsersInfo
 GO
@@ -734,8 +750,9 @@ ALTER PROC sp_CheckUserInfoByUserID
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT PK_iUserInfoID, FK_iUserID, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile, iIsLock FROM tbl_Users_Info 
+    SELECT PK_iUserInfoID, FK_iUserID, sDescription, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile, iIsLock FROM tbl_Users_Info 
     INNER JOIN tbl_Users ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID 
+    INNER JOIN tbl_Roles ON tbl_Roles.PK_iRoleID = tbl_Users.FK_iRoleID
     WHERE tbl_Users_Info.FK_iUserID = @FK_iUserID
 END
 EXEC sp_CheckUserInfoByUserID 3
@@ -753,18 +770,20 @@ AS
 BEGIN 
     SET DATEFORMAT dmy INSERT INTO tbl_Users_Info (FK_iUserID, sFullName, iGender, dDateBirth, dUpdateTime, sImageProfile, iIsLock) VALUES (@FK_iUserID, @sFullName, @iGender, @dDateBirth, @dUpdateTime, @sImageProfile, @iIsLock)
 END
-SET DATEFORMAT dmy EXEC sp_InsertUserInfo 16, N'Nguyễn Thị Vinh', 0, '20/2/2002', '9/9/2024', 'no_user.jpg', 0
+SET DATEFORMAT dmy EXEC sp_InsertUserInfo 7, N'Nguyễn Thị Vinh', 0, '20/2/2002', '9/9/2024', 'no_user.jpg', 0
+DELETE tbl_Users_Info WHERE PK_iUserInfoID = 15
 GO
 --- Thủ tục lấy thông tin tài khoản bằng mã ---
 ALTER PROC sp_GetUserInfoByID
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT PK_iUserInfoID, FK_iUserID, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile, iIsLock FROM tbl_Users_Info
+    SELECT PK_iUserInfoID, FK_iUserID, sDescription, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile, iIsLock FROM tbl_Users_Info
     INNER JOIN tbl_Users ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+	INNER JOIN tbl_Roles ON tbl_Roles.PK_iRoleID = tbl_Users.FK_iRoleID
     WHERE PK_iUserID = @FK_iUserID
 END
-EXEC sp_GetUserInfoByID 8
+EXEC sp_GetUserInfoByID 7
 GO
 
 -------------------------------------------------------- ĐỊA CHỈ NGƯỜI DÙNG ---------------------------------------------------------------
@@ -1105,11 +1124,24 @@ ALTER PROC sp_GetPaymentsTypeByUserID
     @iUserID INT
 AS
 BEGIN
-    SELECT PK_iPaymentID,  sPaymentName, sPaymentImage FROM tbl_PaymentsType 
+    SELECT PK_iPaymentTypeID, PK_iPaymentID,  sPaymentName, sPaymentImage FROM tbl_PaymentsType 
     INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID 
     WHERE tbl_PaymentsType.iUserID = @iUserID
 END
 EXEC sp_GetPaymentsTypeByUserID 10
+GO
+
+-- Thủ tục lấy phương thức thanh toán của tài khoản theo mã đơn hàng
+ALTER PROC sp_GetPaymentsTypeByOrderID
+    @PK_iOrderID INT
+AS
+BEGIN
+    SELECT PK_iPaymentTypeID, PK_iPaymentID,  sPaymentName, sPaymentImage FROM tbl_PaymentsType 
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID 
+    INNER JOIN tbl_Orders ON tbl_Orders.FK_iPaymentTypeID = tbl_PaymentsType.PK_iPaymentTypeID
+    WHERE PK_iOrderID = @PK_iOrderID
+END
+EXEC sp_GetPaymentsTypeByOrderID 1004
 GO
 -------------------------------------------------------- ĐẶT HÀNG ------------------------------------------------------------
 -----Thủ tục thêm đơn hàng-----
@@ -1396,6 +1428,23 @@ END
 -- Đổi tên
 EXEC sp_rename 'sp_GetOrderWaitSettlementByOrderID', 'sp_GetOrderDetailWaitSettlementByOrderID'
 EXEC sp_GetOrderWaitSettlementByOrderID 2
+GO
+
+-- Thủ tục lấy chi tiết đơn hàng theo mã ở trạng thái chờ lấy hàng --
+CREATE PROC sp_GetOrderDetailWaitPickupByOrderID
+    @PK_iOrderID INT
+AS
+BEGIN
+    SELECT tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode, tbl_Orders.dDate FROM tbl_OrderDetails
+    INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_OrderDetails.PK_iProductID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID 
+    INNER JOIN tbl_Discounts ON tbl_Discounts.PK_iDiscountID = tbl_Products.FK_iDiscountID
+    INNER JOIN tbl_Categories ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Orders ON tbl_Orders.PK_iOrderID = tbl_OrderDetails.PK_iOrderID 
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    WHERE tbl_Orders.PK_iOrderID = @PK_iOrderID AND tbl_Order_Status.iOrderStatusCode = 4
+END
 GO
 
 -- Thủ tục lấy chi tiết đơn hàng theo mã ở trạng thái chờ giao hàng --
