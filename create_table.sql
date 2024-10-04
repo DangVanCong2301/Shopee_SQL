@@ -343,3 +343,14 @@ CREATE TABLE tbl_ShippingOrders (
     CONSTRAINT FK_ShippingOrders_Orders FOREIGN KEY (FK_iOrderID) REFERENCES tbl_Orders (PK_iOrderID)
 )
 GO
+
+------------------------- TẠO BẢNG LẤY ĐƠN HÀNG --------------------------
+CREATE TABLE tbl_ShippingPickers (
+    PK_iShippingPickerID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    FK_iShippingOrderID INT,
+    dShippingPickerTime DATETIME
+    CONSTRAINT FK_ShippingPickers_ShippingOrders FOREIGN KEY (FK_iShippingOrderID) REFERENCES tbl_ShippingOrders (PK_iShippingOrderID)
+)
+GO
+ALTER TABLE tbl_ShippingPickers ADD FK_iUserID INT
+ALTER TABLE tbl_ShippingPickers ADD CONSTRAINT FK_ShippingPickers_Users FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users (PK_iUserID)
