@@ -80,6 +80,21 @@ END
 EXEC sp_GetSellerInfoByOrderID 3
 GO
 
+-- Lấy thông tin người bán với mã đơn vận
+CREATE PROC sp_GetSellerInfoByShippingOrderID
+    @PK_iShippingOrderID INT
+AS
+BEGIN
+    SELECT PK_iSellerID, PK_iStoreID, sSellerUsername, sSellerPhone, sStoreName, sSellerAddress FROM tbl_Portals 
+    INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_Portals.FK_iSellerID
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
+    INNER JOIN tbl_Orders ON tbl_Orders.FK_iShopID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_ShippingOrders ON tbl_ShippingOrders.FK_iOrderID = tbl_Orders.PK_iOrderID
+    WHERE PK_iOrderID = @PK_iShippingOrderID
+END
+EXEC sp_GetSellerInfoByShippingOrderID 1
+GO
+
 -------------------------------------------------------- CỬA HÀNG -------------------------------------------------------------------------
 -- Thủ tục lấy cửa hàng --
 CREATE PROC sp_GetStores
@@ -245,14 +260,14 @@ ALTER PROC sp_GetProductsByShopID
     @PK_iShopID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount 
+    SELECT PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', tbl_Products.dCreateTime, tbl_Products.dUpdateTime, dPerDiscount 
     FROM tbl_Stores
     INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE PK_iStoreID = @PK_iShopID
 END
-EXEC sp_GetProductsByShopID 3
+EXEC sp_GetProductsByShopID 1
 GO
 
 -- Thủ tục lấy 10 sản phẩm gợi ý của cửa hàng theo mã cửa hàng --
@@ -280,6 +295,18 @@ BEGIN
     SELECT PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc, sImageMall, sStoreUsername FROM tbl_Stores 
     INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_Stores.FK_iSellerID
     WHERE FK_iSellerID = @FK_iSellerID
+END
+EXEC sp_GetShopBySellerID 3
+GO
+
+-- Thủ tục lấy cửa hàng theo mã đơn hàng --
+CREATE PROC sp_GetShopByOrderID
+    @FK_iOrderID INT
+AS
+BEGIN
+    SELECT PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc, sImageMall, sStoreUsername FROM tbl_Stores 
+    INNER JOIN tbl_Orders ON tbl_Orders.FK_iShopID = tbl_Stores.PK_iStoreID
+    WHERE PK_iOrderID = @FK_iOrderID
 END
 EXEC sp_GetShopBySellerID 3
 GO
@@ -587,7 +614,6 @@ BEGIN
     WHERE PK_iProductID = @PK_iProductID
 END
 EXEC sp_SelectProductByID 2
-GO
 GO
 
 -----Thủ tục cập nhật lại thông tin sản phẩm -----
@@ -1526,10 +1552,10 @@ BEGIN
     WHERE tbl_Orders.PK_iOrderID = @PK_iOrderID AND tbl_Order_Status.iOrderStatusCode = 2
 END
 -- Đổi tên
-EXEC sp_GetOrderWaitSettlementByOrderID 2
+EXEC sp_GetOrderWaitSettlementByOrderID 1
 GO
 
--------------------------------------------------------- ĐƠN HÀNG GIAO ------------------------------------------------------------
+-------------------------------------------------------- ĐƠN VẬN ------------------------------------------------------------
 -- Thủ tục tạo đơn hàng giao --
 CREATE PROC sp_InsertShippingOrder
     @FK_iShippingUnitID INT,
@@ -1542,47 +1568,113 @@ END
 SET DATEFORMAT dmy EXEC sp_InsertShippingOrder 1, 1002, '26/9/2024'
 GO
 
--- Thủ tục lấy đơn hàng giao theo mã đơn hàng -- 
-CREATE PROC sp_GetShippingOrderByOrderID
+-- Thủ tục lấy tất cả đơn vận -- 
+ALTER PROC sp_GetShippingOrders
+AS
+BEGIN
+    SELECT PK_iShippingOrderID, FK_iShippingUnitID, FK_iOrderID, tbl_Orders.FK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName,
+	tbl_ShippingOrders.dShippingTime, sShippingUnitName FROM tbl_Orders
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    INNER JOIN tbl_ShippingOrders ON tbl_ShippingOrders.FK_iOrderID = tbl_Orders.PK_iOrderID
+    INNER JOIN tbl_ShippingUnits ON tbl_ShippingUnits.PK_iShippingUnitID = tbl_ShippingOrders.FK_iShippingUnitID
+END
+EXEC sp_GetShippingOrders
+GO
+
+-- Thủ tục lấy đơn vận giao theo mã đơn hàng -- 
+ALTER PROC sp_GetShippingOrderByOrderID
     @FK_iOrderID INT
 AS
 BEGIN
-    SELECT * FROM tbl_ShippingOrders WHERE FK_iOrderID = @FK_iOrderID
+    SELECT PK_iShippingOrderID, FK_iShippingUnitID, FK_iOrderID, tbl_Orders.FK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName,
+	tbl_ShippingOrders.dShippingTime, sShippingUnitName FROM tbl_Orders
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    INNER JOIN tbl_ShippingOrders ON tbl_ShippingOrders.FK_iOrderID = tbl_Orders.PK_iOrderID
+    INNER JOIN tbl_ShippingUnits ON tbl_ShippingUnits.PK_iShippingUnitID = tbl_ShippingOrders.FK_iShippingUnitID
+    WHERE FK_iOrderID = @FK_iOrderID
 END
+EXEC sp_GetShippingOrderByOrderID 1
 GO
 
 -- Thủ tục lấy đơn hàng giao theo mã  -- 
-CREATE PROC sp_GetShippingOrderByID
+ALTER PROC sp_GetShippingOrderByID
     @PK_iShippingOrderID INT
 AS
 BEGIN
-    SELECT * FROM tbl_ShippingOrders WHERE PK_iShippingOrderID = @PK_iShippingOrderID
+    SELECT PK_iShippingOrderID, FK_iShippingUnitID, FK_iOrderID, tbl_Orders.FK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName,
+	tbl_ShippingOrders.dShippingTime, sShippingUnitName FROM tbl_Orders
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    INNER JOIN tbl_ShippingOrders ON tbl_ShippingOrders.FK_iOrderID = tbl_Orders.PK_iOrderID
+    INNER JOIN tbl_ShippingUnits ON tbl_ShippingUnits.PK_iShippingUnitID = tbl_ShippingOrders.FK_iShippingUnitID
+    WHERE PK_iShippingOrderID = @PK_iShippingOrderID
 END
+EXEC sp_GetShippingOrderByID 1
 GO
 
 -- Thủ tục lấy tất cả đơn hàng giao theo mã cửa hang --
-CREATE PROC sp_GetShippingOrderByShopID
+ALTER PROC sp_GetShippingOrderByShopID
     @FK_iShopID INT
 AS
 BEGIN
-    SELECT PK_iShippingOrderID, FK_iShippingUnitID, FK_iOrderID, dShippingTime FROM tbl_ShippingOrders
-    INNER JOIN tbl_Orders ON tbl_Orders.PK_iOrderID = tbl_ShippingOrders.FK_iOrderID
+    SELECT PK_iShippingOrderID, FK_iShippingUnitID, FK_iOrderID, tbl_Orders.FK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName,
+	tbl_ShippingOrders.dShippingTime, sShippingUnitName FROM tbl_Orders
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    INNER JOIN tbl_ShippingOrders ON tbl_ShippingOrders.FK_iOrderID = tbl_Orders.PK_iOrderID
+    INNER JOIN tbl_ShippingUnits ON tbl_ShippingUnits.PK_iShippingUnitID = tbl_ShippingOrders.FK_iShippingUnitID
     WHERE FK_iShopID = @FK_iShopID
 END
 EXEC sp_GetShippingOrderByShopID 3
 GO
 
--------------------------------------------------------- LẤY ĐƠN HÀNG ------------------------------------------------------------
-CREATE PROC sp_InsertShippingPicker
+-------------------------------------------------------- ĐƠN VẬN LẤY ------------------------------------------------------------
+ALTER PROC sp_InsertShippingPicker
     @FK_iShippingOrderID INT,
-    @FK_iUserID INT,
+    @sPickerName NVARCHAR(100),
     @dShippingPickerTime DATETIME
 AS
 BEGIN
-    INSERT INTO tbl_ShippingPickers (FK_iShippingOrderID, FK_iUserID, dShippingPickerTime) VALUES (@FK_iShippingOrderID, @FK_iUserID, @dShippingPickerTime)
+    INSERT INTO tbl_ShippingPickers (FK_iShippingOrderID, sPickerName, dShippingPickerTime) VALUES (@FK_iShippingOrderID, @sPickerName, @dShippingPickerTime)
 END
 SET DATEFORMAT dmy EXEC sp_InsertShippingPicker 1, 1, '12/12/2024'
+GO
+
+-- Thủ tục lấy tất cả đơn vận lấy --
+ALTER PROC sp_GetShippingPickers
+AS
+BEGIN
+    SELECT PK_iShippingPickerID, FK_iShippingOrderID, FK_iShippingUnitID, FK_iOrderID, tbl_Orders.FK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName,
+	tbl_ShippingOrders.dShippingTime, sShippingUnitName, tbl_ShippingPickers.sPickerName FROM tbl_Orders
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    INNER JOIN tbl_ShippingOrders ON tbl_ShippingOrders.FK_iOrderID = tbl_Orders.PK_iOrderID
+    INNER JOIN tbl_ShippingUnits ON tbl_ShippingUnits.PK_iShippingUnitID = tbl_ShippingOrders.FK_iShippingUnitID
+    INNER JOIN tbl_ShippingPickers ON tbl_ShippingPickers.FK_iShippingOrderID = tbl_ShippingOrders.PK_iShippingOrderID
+END
+EXEC sp_GetShippingPickers
 GO
 
 
