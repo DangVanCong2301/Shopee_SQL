@@ -352,5 +352,8 @@ CREATE TABLE tbl_ShippingPickers (
     CONSTRAINT FK_ShippingPickers_ShippingOrders FOREIGN KEY (FK_iShippingOrderID) REFERENCES tbl_ShippingOrders (PK_iShippingOrderID)
 )
 GO
-ALTER TABLE tbl_ShippingPickers ADD FK_iUserID INT
+ALTER TABLE tbl_ShippingPickers ADD sPickerName NVARCHAR(100)
 ALTER TABLE tbl_ShippingPickers ADD CONSTRAINT FK_ShippingPickers_Users FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users (PK_iUserID)
+-- Xoá khoá ngoại FK_iUserID
+ALTER TABLE tbl_ShippingPickers DROP CONSTRAINT FK_ShippingPickers_Users -- Xoá tên khoá ngoại
+ALTER TABLE tbl_ShippingPickers DROP COLUMN FK_iUserID -- Xoá tên cột 
