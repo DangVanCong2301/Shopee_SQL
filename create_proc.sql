@@ -260,9 +260,10 @@ ALTER PROC sp_GetProductsByShopID
     @PK_iShopID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', tbl_Products.dCreateTime, tbl_Products.dUpdateTime, dPerDiscount 
+    SELECT PK_iProductID, FK_iCategoryID, FK_iStoreID, FK_iParentCategoryID, FK_iDiscountID, sParentCategoryName, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', tbl_Products.dCreateTime, tbl_Products.dUpdateTime, dPerDiscount 
     FROM tbl_Stores
     INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE PK_iStoreID = @PK_iShopID
@@ -332,12 +333,13 @@ BEGIN
     GROUP BY PK_iParentCategoryID, sParentCategoryName, sParentCategoryImage
 END
 EXEC sp_SelectParentCategories
-SELECT * FROM tbl_Categories
+SELECT * FROM tbl_Categories 
+INNER JOIN tbl_Categories ON tbl_Categories.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
 GO
 
 -------------------------------------------------------- THỂ LOẠI -------------------------------------------------------------------------
 -- Tham khảo: https://timoday.edu.vn/bai-3-cau-lenh-truy-van-du-lieu/
--- Thủ tục lấy danh mục--
+-- Thủ tục lấy danh mục (các danh mục đã có sản phẩm)--
 ALTER PROC sp_SelectCategories
 AS
 BEGIN
@@ -348,6 +350,31 @@ BEGIN
 END
 EXEC sp_SelectCategories
 SELECT * FROM tbl_Categories
+GO
+
+-- Thủ tục lấy tất cả các thể loại (cả thể loại chưa có sản phẩm)
+CREATE PROC sp_GetAllCategories
+AS
+BEGIN
+    SELECT PK_iCategoryID, FK_iParentCategoryID, sParentCategoryName, sCategoryName, sCategoryImage, sCategoryDescription
+    FROM tbl_Categories 
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+END
+EXEC sp_GetAllCategories
+GO
+
+-- Thủ tục lấy tất cả các thể loại theo mã cửa hàng
+CREATE PROC sp_GetAllCategoriesByShopID
+    @FK_iShopID INT
+AS
+BEGIN
+    SELECT PK_iCategoryID, FK_iParentCategoryID, sParentCategoryName, sCategoryName, sCategoryImage, sCategoryDescription
+    FROM tbl_Categories 
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    WHERE FK_iStoreID = @FK_iShopID
+END
+EXEC sp_GetAllCategories
 GO
 
 -- Thủ tục lấy danh mục theo mã danh mục cha --
@@ -409,6 +436,16 @@ AS
 BEGIN
     UPDATE tbl_Categories SET sCategoryName = @sCategoryName, sCategoryImage = @sCategoryImage, sCategoryDescription = @sCategoryDescription where PK_iCategoryID = @PK_iCategoryID
 END
+GO
+
+-------------------------------------------------------- GIẢM GIÁ ------------------------------------------------------------
+-- Thủ tục lấy tất cả mức giảm giá --
+CREATE PROC sp_GetDiscounts
+AS
+BEGIN
+    SELECT PK_iDiscountID, dPerDiscount FROM tbl_Discounts
+END
+GO
 -------------------------------------------------------- SẢN PHẨM -------------------------------------------------------------------------
 DECLARE 
     @PageSize INT = 5,
@@ -439,8 +476,9 @@ GO
 ALTER PROC sp_SelectProducts
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
+    SELECT PK_iProductID, FK_iParentCategoryID, FK_iCategoryID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
     INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
 END
@@ -607,8 +645,9 @@ ALTER PROC sp_SelectProductByID
     @PK_iProductID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, sStoreName, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
+    SELECT PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, sParentCategoryName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, sStoreName, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, dCreateTime, dUpdateTime FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     WHERE PK_iProductID = @PK_iProductID
