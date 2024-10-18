@@ -540,7 +540,7 @@ GO
 ALTER PROC sp_SelectProducts
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice FROM tbl_Products 
+    SELECT PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
 	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
     INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
@@ -582,10 +582,12 @@ ALTER PROC sp_SelectProductsByCategoryID
     @FK_iCategoryID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
+    SELECT PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
-    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
     INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     WHERE FK_iCategoryID = @FK_iCategoryID AND tbl_Products.iIsVisible = 1
 END
 SELECT * FROM tbl_Categories
@@ -593,15 +595,16 @@ EXEC sp_SelectProductsByCategoryID 1
 GO
 
 -- Thủ tục lấy sản phẩm theo mã danh mục cha (nếu là quyền là user thì một số sản phẩm sẽ không hiển thị --
-CREATE PROC sp_SelectProductsByParentCategoryID
+ALTER PROC sp_SelectProductsByParentCategoryID
     @FK_iParentCategoryID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
+    SELECT PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
-    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
-    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
     INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     WHERE FK_iParentCategoryID = @FK_iParentCategoryID AND tbl_Products.iIsVisible = 1
 END
 SELECT * FROM tbl_Categories
@@ -657,10 +660,13 @@ GO
 ALTER PROC sp_Get12ProductsAndSortIncre
 AS
 BEGIN
-    SELECT TOP(12) PK_iProductID, FK_iCategoryID, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
+    SELECT TOP(12) 
+    PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
     INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID 
     ORDER BY (dPrice) ASC
 END
 EXEC sp_Get12ProductsAndSortIncre
@@ -697,12 +703,15 @@ ALTER PROC sp_SearchProductsByKeyword
     @sKeyword NVARCHAR(100)
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
+    SELECT PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     WHERE sCategoryName LIKE N'%' + @sKeyword +  '%' OR sProductName LIKE N'%' + @sKeyword  + '%'
 END
-EXEC sp_SearchProductsByKeyword 'Tai'
+EXEC sp_SearchProductsByKeyword 'Tai nghe Xiaomi Mi Basic'
 GO
 
 -- Thủ tục lấy sản phẩm theo mã (ID)--
@@ -719,6 +728,38 @@ BEGIN
     WHERE PK_iProductID = @PK_iProductID
 END
 EXEC sp_SelectProductByID 2
+GO
+
+-----Thủ tục thêm sản phẩm sản phẩm -----
+CREATE PROC sp_InsertProduct
+    @FK_iCategoryID INT,
+    @FK_iDiscountID INT,
+    @FK_iTransportID INT,
+    @sProductName NVARCHAR(100),
+    @iQuantity INT,
+    @sProductDescription NVARCHAR(MAX),
+    @sImageUrl NVARCHAR(100),
+    @dPrice FLOAT,
+    @iIsVisible INT,
+    @dCreateTime DATETIME,
+    @dUpdateTime DATETIME
+AS
+BEGIN
+    INSERT INTO tbl_Products (FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sProductName, iQuantity, sProductDescription, sImageUrl, dPrice, iIsVisible, dCreateTime, dUpdateTime) 
+    VALUES (
+        @FK_iCategoryID, 
+        @FK_iDiscountID,
+        @FK_iTransportID,
+        @sProductName,
+        @iQuantity,
+        @sProductDescription,
+        @sImageUrl,
+        @dPrice,
+        @iIsVisible,
+        @dCreateTime,
+        @dUpdateTime
+    )
+END
 GO
 
 -----Thủ tục cập nhật lại thông tin sản phẩm -----
@@ -751,6 +792,49 @@ BEGIN
     WHERE PK_iProductID = @PK_iProductID
 END
 SELECT * FROM tbl_Products
+GO
+
+-- Thủ tục kiểm tra xem sản phẩm có trong giỏ hàng không -- 
+CREATE PROC sp_CheckProductInCart 
+    @PK_iProductID INT
+AS  
+BEGIN
+    SELECT tbl_Products.PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, tbl_Products.iQuantity, sStoreName, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, sTransportName, dTransportPrice, dCreateTime, dUpdateTime FROM tbl_Products 
+    INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
+    INNER JOIN tbl_CartDetails ON tbl_CartDetails.PK_iProductID = tbl_Products.PK_iProductID
+    WHERE tbl_CartDetails.PK_iProductID = @PK_iProductID
+END
+EXEC sp_CheckProductInCart 50
+GO
+
+-- Thủ tục kiểm tra xem sản phẩm có trong đơn hàng không -- 
+CREATE PROC sp_CheckProductInOrder 
+    @PK_iProductID INT
+AS  
+BEGIN
+    SELECT tbl_Products.PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, tbl_Products.iQuantity, sStoreName, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, sTransportName, dTransportPrice, dCreateTime, dUpdateTime FROM tbl_Products 
+    INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
+    INNER JOIN tbl_OrderDetails ON tbl_OrderDetails.PK_iProductID = tbl_Products.PK_iProductID
+    WHERE tbl_OrderDetails.PK_iProductID = @PK_iProductID
+END
+EXEC sp_CheckProductInOrder 50
+GO
+
+-- Thủ tục xoá sản phẩm bằng mã --
+CREATE PROC sp_DeleteProductByID
+    @PK_iProductID INT
+AS
+BEGIN
+    DELETE tbl_Products WHERE PK_iProductID = @PK_iProductID
+END
 GO
 
 -------------------------------------------------------- YÊU THÍCH SẢN PHẨM -------------------------------------------------------------------------
