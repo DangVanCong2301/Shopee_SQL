@@ -343,6 +343,9 @@ CREATE TABLE tbl_ShippingOrders (
     CONSTRAINT FK_ShippingOrders_Orders FOREIGN KEY (FK_iOrderID) REFERENCES tbl_Orders (PK_iOrderID)
 )
 GO
+-- Thêm cột trạng thái đơn hàng --
+ALTER TABLE tbl_ShippingOrders ADD FK_iOrderStatusID INT
+ALTER TABLE tbl_ShippingOrders ADD CONSTRAINT FK_ShippingOrders_OrderStatus FOREIGN KEY (FK_iOrderStatusID) REFERENCES tbl_Order_Status
 
 ------------------------- TẠO BẢNG LẤY ĐƠN HÀNG --------------------------
 CREATE TABLE tbl_ShippingPickers (
@@ -352,8 +355,13 @@ CREATE TABLE tbl_ShippingPickers (
     CONSTRAINT FK_ShippingPickers_ShippingOrders FOREIGN KEY (FK_iShippingOrderID) REFERENCES tbl_ShippingOrders (PK_iShippingOrderID)
 )
 GO
+-- Thêm cột ảnh lấy hàng -- 
+ALTER TABLE tbl_ShippingPickers ADD sPickerImage NVARCHAR(100)
 ALTER TABLE tbl_ShippingPickers ADD sPickerName NVARCHAR(100)
 ALTER TABLE tbl_ShippingPickers ADD CONSTRAINT FK_ShippingPickers_Users FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users (PK_iUserID)
+-- Thêm cột trạng thái đơn hàng -- 
+ALTER TABLE tbl_ShippingPickers ADD FK_iOrderStatusID INT
+ALTER TABLE tbl_ShippingPickers ADD CONSTRAINT FK_ShippingPickers_OrderStatus FOREIGN KEY (FK_iOrderStatusID) REFERENCES tbl_Order_Status (PK_iOrderStatusID)
 -- Xoá khoá ngoại FK_iUserID
 ALTER TABLE tbl_ShippingPickers DROP CONSTRAINT FK_ShippingPickers_Users -- Xoá tên khoá ngoại
 ALTER TABLE tbl_ShippingPickers DROP COLUMN FK_iUserID -- Xoá tên cột 
