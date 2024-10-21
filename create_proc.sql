@@ -51,6 +51,17 @@ BEGIN
 END
 GO
 
+-- Thủ tục đăng ký tài khoản người bán --
+CREATE PROC sp_RegisterAccountSeller
+    @sSellerPhone NVARCHAR(20),
+    @sSellerUsername NVARCHAR(100),
+    @sSellerPassword NVARCHAR(100)
+AS
+BEGIN
+    INSERT INTO tbl_Sellers (sSellerPhone, sSellerUsername, sSellerPassword) VALUES (@sSellerPhone, @sSellerUsername, @sSellerPassword)
+END
+GO
+
 -------------------------------------------------------- THÔNG TIN TÀI KHOẢN NGƯỜI BÁN ----------------------------------------------------
 -- Lấy thông tin người bán với mã
 ALTER PROC sp_GetSellerInfoBySellerID
@@ -63,7 +74,21 @@ BEGIN
     WHERE PK_iSellerID = @PK_iSellerID
 END
 EXEC sp_rename 'sp_getSellerInfoBySellerID', 'sp_GetSellerInfoBySellerID'
-EXEC sp_GetSellerInfoBySellerID 3
+EXEC sp_GetSellerInfoBySellerID 6
+GO
+
+-- Lấy thông tin người bán với số điện thoại
+CREATE PROC sp_GetSellerInfoByPhone
+    @sSellerPhone INT
+AS
+BEGIN
+    SELECT PK_iSellerID, PK_iStoreID, sSellerUsername, sSellerPhone, sStoreName, sSellerAddress FROM tbl_Portals 
+    INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_Portals.FK_iSellerID
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
+    WHERE sSellerPhone = @sSellerPhone
+END
+EXEC sp_rename 'sp_getSellerInfoBySellerID', 'sp_GetSellerInfoBySellerID'
+EXEC sp_GetSellerInfoByPhone '23012002'
 GO
 
 -- Lấy thông tin người bán với mã đơn hàng
@@ -379,7 +404,7 @@ END
 EXEC sp_GetBannersShopByShopID 1
 GO
 
--------------------------------------------------------- THỂ LOẠI CHA -------------------------------------------------------------------------
+-------------------------------------------------------- THỂ LOẠI CHA (NGÀNH HÀNG) -------------------------------------------------------------------------
 -- Thủ tục lấy danh mục--
 CREATE PROC sp_SelectParentCategories
 AS
