@@ -878,11 +878,13 @@ GO
 
 -------------------------------------------------------- TÀI KHOẢN -------------------------------------------------------------------------
 -- Thủ tục kiểm tra xem email tài khoản đã đăng ký hay chưa
-CREATE PROC sp_CheckEmailUserIsRegis
+ALTER PROC sp_CheckEmailUserIsRegis
     @sEmail NVARCHAR(100)
 AS
 BEGIN
-    SELECT * FROM tbl_Users WHERE sEmail = @sEmail
+    SELECT PK_iUserID, FK_iRoleID, sEmail, dCreateTime, sPassword, sUserName, sName as 'sRoleName', sDescription as 'sRoleDescription' FROM tbl_Users
+    INNER JOIN tbl_Roles ON tbl_Roles.PK_iRoleID = tbl_Users.FK_iRoleID 
+    WHERE sEmail = @sEmail
 END
 EXEC sp_CheckEmailUserIsRegis "cong@gmail.com"
 GO
@@ -911,7 +913,9 @@ ALTER PROC sp_CheckUserLogin
     @PK_iUserID INT
 AS
 BEGIN
-    SELECT * FROM tbl_Users WHERE PK_iUserID = @PK_iUserID
+    SELECT PK_iUserID, FK_iRoleID, sEmail, dCreateTime, sPassword, sUserName, sName as 'sRoleName', sDescription as 'sRoleDescription' FROM tbl_Users
+    INNER JOIN tbl_Roles ON tbl_Roles.PK_iRoleID = tbl_Users.FK_iRoleID 
+    WHERE PK_iUserID = @PK_iUserID
 END
 EXEC sp_CheckUserLogin 10
 SELECT * FROM tbl_Users
@@ -924,9 +928,11 @@ ALTER PROC sp_LoginEmailAndPassword
     @sPassword NVARCHAR(100)
 AS
 BEGIN
-    SELECT * FROM tbl_Users where sEmail = @sEmail and sPassword = @sPassword
+    SELECT PK_iUserID, FK_iRoleID, sEmail, dCreateTime, sPassword, sUserName, sName as 'sRoleName', sDescription as 'sRoleDescription' FROM tbl_Users
+    INNER JOIN tbl_Roles ON tbl_Roles.PK_iRoleID = tbl_Users.FK_iRoleID 
+    WHERE sEmail = @sEmail and sPassword = @sPassword
 END
-EXEC sp_LoginEmailAndPassword 'cong@gmail.com', '12345678'
+EXEC sp_LoginEmailAndPassword 'dangvancong2301@gmail.com', '2KUztBcegH4='
 GO
 
 SELECT * FROM tbl_Users
@@ -964,11 +970,13 @@ END
 GO
 
 -- Thủ tục lấy lại mật khẩu tài khoản với email --
-CREATE PROC sp_GetPasswordAccountByEmail
+ALTER PROC sp_GetPasswordAccountByEmail
     @sEmail NVARCHAR(100)
 AS
 BEGIN
-    SELECT * FROM tbl_Users WHERE sEmail = @sEmail
+    SELECT PK_iUserID, FK_iRoleID, sEmail, dCreateTime, sPassword, sUserName, sName as 'sRoleName', sDescription as 'sRoleDescription' FROM tbl_Users
+    INNER JOIN tbl_Roles ON tbl_Roles.PK_iRoleID = tbl_Users.FK_iRoleID 
+    WHERE sEmail = @sEmail
 END
 EXEC sp_GetPasswordAccountByEmail 'cuong@gmail.com'
 GO
@@ -985,11 +993,13 @@ EXEC sp_ChangePasswordByUserID 1, '123'
 GO
 
 -- Thủ tục lấy mã tài khoản với email --
-CREATE PROC sp_GetUserIDAccountByEmail
+ALTER PROC sp_GetUserIDAccountByEmail
     @sEmail NVARCHAR(100)
 AS
 BEGIN
-    SELECT * FROM tbl_Users WHERE sEmail = @sEmail
+    SELECT PK_iUserID, FK_iRoleID, sEmail, dCreateTime, sPassword, sUserName, sName as 'sRoleName', sDescription as 'sRoleDescription' FROM tbl_Users
+    INNER JOIN tbl_Roles ON tbl_Roles.PK_iRoleID = tbl_Users.FK_iRoleID 
+    WHERE sEmail = @sEmail
 END
 EXEC sp_GetUserIDAccountByEmail 'vinh@gmail.com'
 GO
