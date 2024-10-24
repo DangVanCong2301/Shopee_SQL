@@ -364,4 +364,20 @@ ALTER TABLE tbl_ShippingPickers ADD FK_iOrderStatusID INT
 ALTER TABLE tbl_ShippingPickers ADD CONSTRAINT FK_ShippingPickers_OrderStatus FOREIGN KEY (FK_iOrderStatusID) REFERENCES tbl_Order_Status (PK_iOrderStatusID)
 -- Xoá khoá ngoại FK_iUserID
 ALTER TABLE tbl_ShippingPickers DROP CONSTRAINT FK_ShippingPickers_Users -- Xoá tên khoá ngoại
-ALTER TABLE tbl_ShippingPickers DROP COLUMN FK_iUserID -- Xoá tên cột 
+ALTER TABLE tbl_ShippingPickers DROP COLUMN FK_iUserID -- Xoá tên cột
+
+------------------------- TẠO BẢNG GIAO ĐƠN HÀNG --------------------------
+CREATE TABLE tbl_ShippingDeliveries (
+    PK_iShippingDeliveryID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    FK_iShippingOrderID INT,
+    FK_iUserID INT,
+    sDeliveryImage NVARCHAR(100),
+    dDeliveryTime DATETIME
+    CONSTRAINT FK_ShippingDeliveries_ShippingOrders FOREIGN KEY (FK_iShippingOrderID) REFERENCES tbl_ShippingOrders (PK_iShippingOrderID),
+    CONSTRAINT FK_ShippingDeliveries_Users FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users(PK_iUserID)
+)
+GO
+ALTER TABLE tbl_ShippingDeliveries ADD sDeliverName NVARCHAR(100)
+-- Thêm cột trạng thái đơn hàng -- 
+ALTER TABLE tbl_ShippingDeliveries ADD FK_iOrderStatusID INT
+ALTER TABLE tbl_ShippingDeliveries ADD CONSTRAINT FK_ShippingDeliveries_OrderStatus FOREIGN KEY (FK_iOrderStatusID) REFERENCES tbl_Order_Status (PK_iOrderStatusID)
