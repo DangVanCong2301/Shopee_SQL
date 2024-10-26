@@ -222,8 +222,11 @@ CREATE TABLE tbl_Reviews (
     dDeleteTime DATETIME
 )
 GO
+-- Thêm ảnh bình luận --
+ALTER TABLE tbl_Reviews ADD sReviewerImage NVARCHAR(100)
 ALTER TABLE tbl_Reviews ADD CONSTRAINT FK_iProductID FOREIGN KEY (FK_iProductID) REFERENCES tbl_Products,
 CONSTRAINT FK_iUserID FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users
+ALTER TABLE tbl_Reviews DROP COLUMN dDeleteTime -- Xoá tên cột  dDiscout
 
 ------------------------- TẠO BẢNG GIỎ HÀNG --------------------------
 CREATE TABLE tbl_Carts (

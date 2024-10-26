@@ -876,6 +876,23 @@ END
 EXEC sp_SelectProductFavorites 10
 GO
 
+-------------------------------------------------------- BÌNH LUÂN, ĐÁNH GIÁ SẢN PHẨM ------------------------------------------------------
+-- Thêm bình luận đánh giá sản phẩm --
+CREATE PROC sp_InsertProductReviewer
+    @FK_iUserID INT,
+    @FK_iProductID INT,
+    @iStar INT,
+    @sComment NVARCHAR(MAX),
+    @sReviewerImage NVARCHAR(100),
+    @dCreateTime DATETIME,
+    @dUpdateTime DATETIME
+AS
+BEGIN
+    INSERT INTO tbl_Reviews (FK_iUserID, FK_iProductID, iStars, sComment, sReviewerImage, dCreateTime, dUpdateTime) VALUES 
+    (@FK_iUserID, @FK_iProductID, @iStar, @sComment, @sReviewerImage, @dCreateTime, @dUpdateTime)
+END
+GO
+
 -------------------------------------------------------- TÀI KHOẢN -------------------------------------------------------------------------
 -- Thủ tục kiểm tra xem email tài khoản đã đăng ký hay chưa
 ALTER PROC sp_CheckEmailUserIsRegis
@@ -1691,6 +1708,15 @@ BEGIN
 END
 GO
 
+-- Thủ tục xác nhận đơn hàng về đã nhận hàng --
+CREATE PROC sp_ConfirmOrderAboutReceived
+    @PK_iOrderID INT
+AS
+BEGIN
+    UPDATE tbl_Orders SET FK_iOrderStatusID = 16 WHERE PK_iOrderID = @PK_iOrderID
+END
+GO
+
 -------------------------------------------------------- CHI TIẾT ĐẶT HÀNG ------------------------------------------------------------
 -----Thủ tục thêm sản phẩm vào chi tiết đơn hàng -----
 ALTER PROC sp_InserProductIntoOrderDetail
@@ -1711,7 +1737,7 @@ ALTER PROC sp_GetProductsOrderByUserID
     @PK_iUserID INT
 AS  
 BEGIN
-    SELECT tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode, tbl_Orders.dDate FROM tbl_OrderDetails
+    SELECT tbl_Orders.PK_iOrderID, tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode, tbl_Orders.dDate FROM tbl_OrderDetails
     INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_OrderDetails.PK_iProductID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID 
     INNER JOIN tbl_Discounts ON tbl_Discounts.PK_iDiscountID = tbl_Products.FK_iDiscountID
@@ -1750,7 +1776,7 @@ ALTER PROC sp_GetProductsOrderByUserIDWaitSettlement
     @PK_iUserID INT
 AS  
 BEGIN
-    SELECT tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode, tbl_Orders.dDate FROM tbl_OrderDetails
+    SELECT tbl_Orders.PK_iOrderID, tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode, tbl_Orders.dDate FROM tbl_OrderDetails
     INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_OrderDetails.PK_iProductID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID 
     INNER JOIN tbl_Discounts ON tbl_Discounts.PK_iDiscountID = tbl_Products.FK_iDiscountID
@@ -1766,11 +1792,11 @@ SELECT * FROM tbl_Orders
 GO
 
 -----Thủ tục lấy sản phẩm chi tiết đơn hàng theo mã tài khoản theo trạng đã giao hàng -----
-CREATE PROC sp_GetProductsOrderByUserIDDelivered
+ALTER PROC sp_GetProductsOrderByUserIDDelivered
     @PK_iUserID INT
 AS  
 BEGIN
-    SELECT tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode, tbl_Orders.dDate FROM tbl_OrderDetails
+    SELECT tbl_Orders.PK_iOrderID, tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode, tbl_Orders.dDate FROM tbl_OrderDetails
     INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_OrderDetails.PK_iProductID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID 
     INNER JOIN tbl_Discounts ON tbl_Discounts.PK_iDiscountID = tbl_Products.FK_iDiscountID
@@ -1778,7 +1804,7 @@ BEGIN
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     INNER JOIN tbl_Orders ON tbl_Orders.PK_iOrderID = tbl_OrderDetails.PK_iOrderID 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
-    WHERE tbl_Orders.FK_iUserID = @PK_iUserID AND tbl_Order_Status.iOrderStatusCode = 3
+    WHERE tbl_Orders.FK_iUserID = @PK_iUserID AND tbl_Order_Status.iOrderStatusCode = 3 OR tbl_Order_Status.iOrderStatusCode = 14
 END
 EXEC sp_GetProductsOrderByUserIDDelivered 2
 SELECT * FROM tbl_Order_Status
