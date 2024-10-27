@@ -227,6 +227,7 @@ ALTER TABLE tbl_Reviews ADD sReviewerImage NVARCHAR(100)
 ALTER TABLE tbl_Reviews ADD CONSTRAINT FK_iProductID FOREIGN KEY (FK_iProductID) REFERENCES tbl_Products,
 CONSTRAINT FK_iUserID FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users
 ALTER TABLE tbl_Reviews DROP COLUMN dDeleteTime -- Xoá tên cột  dDiscout
+EXEC sp_rename 'tbl_Reviews', 'tbl_Reviewers' -- Đổi tên bảng tbl_BannerShops thành tbl_Sliders_Shop (Tương tự với đổi tên thủ tục lưu)
 
 ------------------------- TẠO BẢNG GIỎ HÀNG --------------------------
 CREATE TABLE tbl_Carts (
