@@ -108,8 +108,9 @@ ALTER TABLE tbl_Stores ADD sImageBackground NVARCHAR(100)
 ALTER TABLE tbl_Stores ADD sDesc NVARCHAR(MAX)
 ALTER TABLE tbl_Stores ADD sImageMall NVARCHAR(100)
 ALTER TABLE tbl_Stores ADD sStoreUsername NVARCHAR(100)
-ALTER TABLE tbl_Stores ADD FK_iSellerID INT
-ALTER TABLE tbl_Stores ADD CONSTRAINT FK_Stores_Sellers FOREIGN KEY (FK_iSellerID) REFERENCES tbl_Sellers(PK_iSellerID)
+-- Xoá cột khoá ngoại FK_iParentCategoryID
+ALTER TABLE tbl_Stores DROP CONSTRAINT FK_Stores_ParentCategories -- Xoá tên khoá ngoại
+ALTER TABLE tbl_Stores DROP COLUMN FK_iParentCategoryID -- Xoá tên cột 
 
 ------------------------- TẠO BẢNG BANNER CỬA HÀNG --------------------------
 CREATE TABLE tbl_BannerShops (
@@ -127,6 +128,16 @@ CREATE TABLE tbl_Parent_Categories (
     PK_iParentCategoryID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
     sParentCategoryName NVARCHAR(100),
     sParentCategoryImage NVARCHAR(100)
+)
+GO
+
+------------------------- TẠO BẢNG CỬA HÀNG - NGÀNH HÀNG --------------------------
+CREATE TABLE tbl_StoreIndustries(
+    PK_iStoreIndustryID INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    FK_iStoreID INT,
+    FK_iParentCategoryID INT
+    CONSTRAINT FK_StoreIndustries_Stores FOREIGN KEY (FK_iStoreID) REFERENCES tbl_Stores(PK_iStoreID),
+    CONSTRAINT FK_StoreIndustries_ParentCategories FOREIGN KEY (FK_iParentCategoryID) REFERENCES tbl_Parent_Categories(PK_iParentCategoryID)
 )
 GO
 
@@ -195,6 +206,9 @@ ALTER COLUMN iIsVisible INT
 -- Thêm khoá ngoại FK_iTransportID
 ALTER TABLE tbl_Products ADD FK_iTransportID INT
 ALTER TABLE tbl_Products ADD CONSTRAINT FK_Products_Transports FOREIGN KEY (FK_iTransportID) REFERENCES tbl_Transports (PK_iTransportID)
+-- Thêm cột cửa hàng -- 
+ALTER TABLE tbl_Products ADD FK_iStoreID INT
+ALTER TABLE tbl_Products ADD CONSTRAINT FK_Products_Stores FOREIGN KEY (FK_iStoreID) REFERENCES tbl_Stores(PK_iStoreID)
 
 ------------------------- TẠO BẢNG YÊU THÍCH SẢN PHẨM --------------------------
 CREATE TABLE tbl_Favorites (
