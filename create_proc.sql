@@ -122,10 +122,11 @@ GO
 
 -------------------------------------------------------- CỬA HÀNG -------------------------------------------------------------------------
 -- Thủ tục lấy cửa hàng --
-CREATE PROC sp_GetStores
+ALTER PROC sp_GetStores
 AS
 BEGIN
-    SELECT * FROM tbl_Stores
+    SELECT PK_iStoreID, FK_iSellerID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc, sImageMall, sStoreUsername
+    FROM tbl_Stores
 END
 EXEC sp_GetStores
 -- Đổi tên
@@ -133,21 +134,25 @@ EXEC sp_rename 'sp_SelelteStores', 'sp_GetStores'
 GO
 
 -- Thủ tục lấy cửa hàng theo mã cửa hàng --
-CREATE PROC sp_GetShopByID
+ALTER PROC sp_GetShopByID
     @PK_iShopID INT
 AS
 BEGIN
-    SELECT * FROM tbl_Stores WHERE PK_iStoreID = @PK_iShopID
+    SELECT PK_iStoreID, FK_iSellerID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc, sImageMall, sStoreUsername
+    FROM tbl_Stores
+    WHERE PK_iStoreID = @PK_iShopID
 END
 EXEC sp_GetShopByID 1
 GO
 
 -- Thủ tục lấy cửa hàng theo tên đăng nhập --
-CREATE PROC sp_GetShopByUsername
+ALTER PROC sp_GetShopByUsername
     @sShopUsername NVARCHAR(100)
 AS
 BEGIN
-    SELECT * FROM tbl_Stores WHERE sStoreUsername = @sShopUsername
+    SELECT PK_iStoreID, FK_iSellerID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc, sImageMall, sStoreUsername
+    FROM tbl_Stores
+    WHERE sStoreUsername = @sShopUsername
 END
 EXEC sp_GetShopByUsername 'f4shop.vn'
 GO
@@ -157,10 +162,9 @@ ALTER PROC sp_GetShopByProductID
     @PK_iProductID INT
 AS
 BEGIN
-    SELECT PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sImageMall, sStoreUsername, sDesc
+    SELECT PK_iStoreID, FK_iSellerID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc, sImageMall, sStoreUsername
     FROM tbl_Stores
-    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
-    INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    INNER JOIN tbl_Products ON tbl_Products.FK_iStoreID = tbl_Stores.PK_iStoreID
     WHERE PK_iProductID = @PK_iProductID
 END
 EXEC sp_GetShopByProductID 3
@@ -171,14 +175,15 @@ ALTER PROC sp_GetShopByParentCategoryID
     @FK_iParentCategoryID INT
 AS
 BEGIN
-    SELECT PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sImageMall, sStoreUsername, sDesc, COUNT(tbl_Categories.PK_iCategoryID) as 'iCategoryCount'
-    FROM tbl_Parent_Categories
-    INNER JOIN tbl_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
-    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    SELECT PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sImageMall, sStoreUsername, sDesc, COUNT(tbl_Categories.PK_iCategoryID) as 'iCategoryCount', COUNT(tbl_Products.PK_iProductID) as 'iProductCount'
+    FROM tbl_Stores
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Stores.FK_iParentCategoryID
+    INNER JOIN tbl_Categories ON tbl_Categories.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
+    INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     WHERE tbl_Parent_Categories.PK_iParentCategoryID = @FK_iParentCategoryID
     GROUP BY PK_iStoreID, sStoreName, sImageAvatar, sImageLogo, sImageBackground, sDesc, sImageMall, sStoreUsername
 END
-EXEC sp_GetShopByParentCategoryID 3
+EXEC sp_GetShopByParentCategoryID 4
 GO
 
 -- Thủ tục lấy banner cửa hàng theo mã cửa hàng --
@@ -193,7 +198,7 @@ BEGIN
     SELECT TOP(3) 
         PK_iProductID, 
         FK_iStoreID,
-        FK_iParentCategoryID,
+        tbl_Categories.FK_iParentCategoryID,
         FK_iCategoryID, 
         FK_iDiscountID,
         FK_iTransportID,
@@ -212,14 +217,15 @@ BEGIN
         sTransportName, 
         dTransportPrice
     FROM tbl_Stores 
-    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
-    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_StoreIndustries ON tbl_StoreIndustries.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_StoreIndustries.FK_iParentCategoryID
+    INNER JOIN tbl_Categories ON tbl_Categories.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID 
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     WHERE tbl_Stores.PK_iStoreID = @PK_iShopID
 END
-EXEC sp_GetTop3SellingProductsShop 2
+EXEC sp_GetTop3SellingProductsShop 5
 -- Đổi tên
 EXEC sp_rename 'sp_GetTopSellingProductsShop', 'sp_GetTop3SellingProductsShop'
 GO
@@ -232,7 +238,7 @@ BEGIN
     SELECT TOP(10) 
         PK_iProductID, 
         FK_iStoreID,
-        FK_iParentCategoryID,
+        tbl_Categories.FK_iParentCategoryID,
         FK_iCategoryID, 
         FK_iDiscountID,
         FK_iTransportID,
@@ -251,14 +257,15 @@ BEGIN
         sTransportName,
         dTransportPrice
     FROM tbl_Stores 
-    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
-    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_StoreIndustries ON tbl_StoreIndustries.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_StoreIndustries.FK_iParentCategoryID
+    INNER JOIN tbl_Categories ON tbl_Categories.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID 
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     WHERE tbl_Stores.PK_iStoreID = @PK_iShopID
 END
-EXEC sp_GetTop10SellingProductsShop 2
+EXEC sp_GetTop10SellingProductsShop 5
 GO
 
 -- Thủ tục lấy top 10 sản phẩm giá tốt (tiền tăng dần) của cửa hàng theo mã cửa hàng --
@@ -269,7 +276,7 @@ BEGIN
     SELECT TOP(10) 
         PK_iProductID, 
         FK_iStoreID,
-        FK_iParentCategoryID,
+        tbl_Categories.FK_iParentCategoryID,
         FK_iCategoryID, 
 		FK_iDiscountID,
 		FK_iTransportID,
@@ -288,29 +295,32 @@ BEGIN
         sTransportName,
         dTransportPrice
     FROM tbl_Stores 
-    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
-    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_StoreIndustries ON tbl_StoreIndustries.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_StoreIndustries.FK_iParentCategoryID
+    INNER JOIN tbl_Categories ON tbl_Categories.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID 
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     WHERE tbl_Stores.PK_iStoreID = @PK_iShopID ORDER BY (dPrice) ASC
 END
-EXEC sp_GetTop10GoodPriceProductsShop 2
+EXEC sp_GetTop10GoodPriceProductsShop 5
 GO
 
--- Thủ tục lấy các danh mục của cửa hàng theo mã cửa hàng --
-CREATE PROC sp_GetCategoriesByShopID
+-- Thủ tục lấy các danh mục của cửa hàng (đã có sản phẩm) theo mã cửa hàng --
+ALTER PROC sp_GetCategoriesByShopID
     @PK_iShopID INT
 AS
 BEGIN
     SELECT PK_iCategoryID, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount', sCategoryDescription
-    FROM tbl_Stores 
-    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
-    INNER JOIN tbl_Products ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    FROM tbl_Stores
+    INNER JOIN tbl_StoreIndustries ON tbl_StoreIndustries.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_StoreIndustries.FK_iParentCategoryID
+    INNER JOIN tbl_Categories ON tbl_Categories.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
+    INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     WHERE PK_iStoreID = @PK_iShopID
     GROUP BY PK_iCategoryID, sCategoryName, sCategoryImage, sCategoryDescription 
 END
-EXEC sp_GetCategoriesByShopID 1
+EXEC sp_GetCategoriesByShopID 4
 GO
 
 -- Thủ tục lấy các sản phẩm của cửa hàng theo mã cửa hàng --
@@ -318,16 +328,17 @@ ALTER PROC sp_GetProductsByShopID
     @PK_iShopID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, FK_iStoreID, FK_iParentCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', tbl_Products.dCreateTime, tbl_Products.dUpdateTime, dPerDiscount, sTransportName, dTransportPrice
+    SELECT PK_iProductID, FK_iCategoryID, FK_iStoreID, tbl_Categories.FK_iParentCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sStoreName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', tbl_Products.dCreateTime, tbl_Products.dUpdateTime, dPerDiscount, sTransportName, dTransportPrice
     FROM tbl_Stores
-    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
-	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_StoreIndustries ON tbl_StoreIndustries.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_StoreIndustries.FK_iParentCategoryID
+    INNER JOIN tbl_Categories ON tbl_Categories.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     WHERE PK_iStoreID = @PK_iShopID
 END
-EXEC sp_GetProductsByShopID 1
+EXEC sp_GetProductsByShopID 5
 GO
 
 -- Thủ tục lấy 10 sản phẩm gợi ý của cửa hàng theo mã cửa hàng --
@@ -338,7 +349,7 @@ BEGIN
     SELECT TOP(10) 
         PK_iProductID, 
         FK_iStoreID,
-        FK_iParentCategoryID,
+        tbl_Categories.FK_iParentCategoryID,
         FK_iCategoryID, 
         FK_iDiscountID,
         FK_iTransportID,
@@ -357,14 +368,15 @@ BEGIN
         sTransportName,
         dTransportPrice
     FROM tbl_Stores
-    INNER JOIN tbl_Categories ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
-    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_StoreIndustries ON tbl_StoreIndustries.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_StoreIndustries.FK_iParentCategoryID
+    INNER JOIN tbl_Categories ON tbl_Categories.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     WHERE PK_iStoreID = @PK_iShopID
 END
-EXEC sp_GetTop10SuggestProductsByShopID 2 
+EXEC sp_GetTop10SuggestProductsByShopID 5
 -- Đổi tên
 EXEC sp_rename 'sp_Get10SuccessProductsByShopID', 'sp_GetTop10SuggestProductsByShopID'
 GO
@@ -418,6 +430,9 @@ SELECT * FROM tbl_Categories
 INNER JOIN tbl_Categories ON tbl_Categories.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
 GO
 
+-------------------------------------------------------- CỬA HÀNG - NGÀNH HÀNG -------------------------------------------------------------------------
+
+
 -------------------------------------------------------- THỂ LOẠI -------------------------------------------------------------------------
 -- Tham khảo: https://timoday.edu.vn/bai-3-cau-lenh-truy-van-du-lieu/
 -- Thủ tục lấy danh mục (các danh mục đã có sản phẩm)--
@@ -444,18 +459,21 @@ END
 EXEC sp_GetAllCategories
 GO
 
--- Thủ tục lấy tất cả các thể loại theo mã cửa hàng
-CREATE PROC sp_GetAllCategoriesByShopID
+-- Thủ tục lấy tất cả các thể loại theo mã cửa hàng (thể loại có sản phẩm)
+ALTER PROC sp_GetAllCategoriesByShopID
     @FK_iShopID INT
 AS
 BEGIN
-    SELECT PK_iCategoryID, FK_iParentCategoryID, sParentCategoryName, sCategoryName, sCategoryImage, sCategoryDescription
+    SELECT PK_iCategoryID, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount', sCategoryDescription
     FROM tbl_Categories 
-    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
-    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
-    WHERE FK_iStoreID = @FK_iShopID
+    iNNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_StoreIndustries ON tbl_StoreIndustries.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_StoreIndustries.FK_iStoreID
+    INNER JOIN tbl_Products ON FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    WHERE tbl_Stores.PK_iStoreID = @FK_iShopID
+    GROUP BY PK_iCategoryID, tbl_Categories.FK_iParentCategoryID, sCategoryName, sCategoryImage, sCategoryDescription 
 END
-EXEC sp_GetAllCategories
+EXEC sp_GetAllCategoriesByShopID 5
 GO
 
 -- Thủ tục lấy danh mục theo mã danh mục cha --
@@ -470,7 +488,7 @@ BEGIN
     WHERE FK_iParentCategoryID = @FK_iParentCategoryID
     GROUP BY PK_iCategoryID, FK_iParentCategoryID, sCategoryName, sCategoryImage, sCategoryDescription 
 END
-EXEC sp_SelectCategoriesByParentCategoryID 3
+EXEC sp_SelectCategoriesByParentCategoryID 4
 SELECT * FROM tbl_Categories
 GO
 
@@ -565,10 +583,11 @@ GO
 ALTER PROC sp_SelectProducts
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice FROM tbl_Products 
+    SELECT PK_iProductID, FK_iStoreID, tbl_Categories.FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice 
+    FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
 	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
-    INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Products.FK_iStoreID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
 END
@@ -607,10 +626,10 @@ ALTER PROC sp_SelectProductsByCategoryID
     @FK_iCategoryID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice FROM tbl_Products 
+    SELECT PK_iProductID, tbl_Stores.PK_iStoreID AS 'FK_iStoreID', tbl_Categories.FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
 	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
-    INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     WHERE FK_iCategoryID = @FK_iCategoryID AND tbl_Products.iIsVisible = 1
@@ -624,16 +643,16 @@ ALTER PROC sp_SelectProductsByParentCategoryID
     @FK_iParentCategoryID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice FROM tbl_Products 
+    SELECT PK_iProductID, tbl_Stores.PK_iStoreID as 'FK_iStoreID', tbl_Categories.FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
 	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
-    INNER JOIN tbl_Stores ON tbl_Categories.FK_iStoreID = tbl_Stores.PK_iStoreID
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
-    WHERE FK_iParentCategoryID = @FK_iParentCategoryID AND tbl_Products.iIsVisible = 1
+    WHERE tbl_Categories.FK_iParentCategoryID = @FK_iParentCategoryID AND tbl_Products.iIsVisible = 1
 END
 SELECT * FROM tbl_Categories
-EXEC sp_SelectProductsByParentCategoryID 3
+EXEC sp_SelectProductsByParentCategoryID 3 
 GO
 
 -- Thủ tục lấy sản phẩm theo mã danh mục (nếu là admin thì sẽ hiện thị tất cả sản phẩm --
@@ -1255,12 +1274,13 @@ BEGIN
     INNER JOIN tbl_Users ON tbl_CartDetails.PK_iUserID = tbl_Users.PK_iUserID
     INNER JOIN tbl_Products ON tbl_CartDetails.PK_iProductID = tbl_Products.PK_iProductID
     INNER JOIN tbl_Categories ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
-    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Products.FK_iStoreID
     INNER JOIN tbl_Carts ON tbl_CartDetails.PK_iCartID = tbl_Carts.PK_iCartID
     INNER JOIN tbl_Transports ON tbl_Products.FK_iTransportID = tbl_Transports.PK_iTransportID
     WHERE tbl_Users.PK_iUserID = @PK_iUserID    
 END
-EXEC sp_GetInfoCart 10
+EXEC sp_GetInfoCart 1
 GO   
 
 -----Thủ tục lấy thông tin sản phẩm giỏ hàng theo mã tài khoản, mã sản phẩm-----
@@ -1468,7 +1488,7 @@ ALTER PROC sp_GetOrderByID
     @dDate DATETIME
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
     FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
@@ -1481,12 +1501,30 @@ END
 SET DATEFORMAT dmy EXEC sp_GetOrderByID 2, 3, '29/7/2024'
 GO
 
+-----Thủ tục lấy đơn hàng theo mã đơn hàng -----
+ALTER PROC sp_GetOrderByOrderID
+   @PK_iOrderID INT
+AS
+BEGIN
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    FROM tbl_Orders 
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    WHERE PK_iOrderID = @PK_iOrderID
+END
+EXEC sp_GetOrderByOrderID 2
+GO
+
 -----Thủ tục lấy đơn hàng theo mã người dùng ở trạng thái chờ thanh toán -----
 ALTER PROC sp_GetOrderByUserIDWaitSettlement
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
     FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
@@ -1500,11 +1538,11 @@ EXEC sp_GetOrderByUserIDWaitSettlement 2
 GO
 
 -----Thủ tục lấy đơn hàng theo mã người dùng ở trạng thái đang vận chuyển theo mã tài khoản -----
-CREATE PROC sp_GetOrderByUserIDTransiting
+ALTER PROC sp_GetOrderByUserIDTransiting
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
     FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
@@ -1522,7 +1560,7 @@ ALTER PROC sp_GetOrderByUserIDWaitDelivery
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
     FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
@@ -1536,11 +1574,11 @@ EXEC sp_GetOrderByUserIDWaitDelivery 1
 GO
 
 -----Thủ tục lấy đơn hàng theo mã người dùng ở trạng thái đã giao hàng mã tài khoản -----
-CREATE PROC sp_GetOrderByUserIDDelivered
+ALTER PROC sp_GetOrderByUserIDDelivered
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
     FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
@@ -1558,7 +1596,8 @@ GO
 ALTER PROC sp_GetOrderWaitSettlement
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
@@ -1570,12 +1609,81 @@ END
 EXEC sp_GetOrderWaitSettlement
 GO
 
+-- Thủ tục lấy tất cả đơn hàng ở trạng thái lấy hàng -- 
+ALTER PROC sp_GetOrderWaitPickup
+AS
+BEGIN
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    FROM tbl_Orders 
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    WHERE tbl_Order_Status.iOrderStatusCode = 4
+END
+EXEC sp_GetOrderWaitPickup
+GO
+
+-- Thủ tục lấy tất cả đơn hàng ở trạng thái đang lấy hàng -- 
+ALTER PROC sp_GetOrderPickingUp
+AS
+BEGIN
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    FROM tbl_Orders 
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    WHERE tbl_Order_Status.iOrderStatusCode = 5
+END
+EXEC sp_GetOrderPickingUp
+GO
+
+-- Thủ tục lấy tất cả đơn hàng ở trạng thái đang giao hàng -- 
+ALTER PROC sp_GetOrderDelivering
+AS
+BEGIN
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    FROM tbl_Orders 
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    WHERE tbl_Order_Status.iOrderStatusCode = 6
+END
+EXEC sp_GetOrderDelivering
+GO
+
+-- Thủ tục lấy tất cả đơn hàng ở trạng thái đã hoàn thành -- 
+ALTER PROC sp_GetOrderCompleted
+AS
+BEGIN
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    FROM tbl_Orders 
+    INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
+    INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
+    WHERE tbl_Order_Status.iOrderStatusCode = 3 OR tbl_Order_Status.iOrderStatusCode = 14
+END
+EXEC sp_GetOrderCompleted
+GO
+
 -- Thủ tục lấy tất cả đơn hàng ở trạng thái chờ xác nhận theo mã cửa hàng -- 
-CREATE PROC sp_GetOrderWaitSettlementByShopID
+ALTER PROC sp_GetOrderWaitSettlementByShopID
     @FK_iShopID INT
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
@@ -1584,7 +1692,7 @@ BEGIN
     INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
     WHERE tbl_Order_Status.iOrderStatusCode = 0 AND FK_iShopID = @FK_iShopID
 END
-EXEC sp_GetOrderWaitSettlement
+EXEC sp_GetOrderWaitSettlementByShopID 1
 GO
 
 -- Thủ tục lấy tất cả đơn hàng ở trạng thái chờ lấy hàng theo mã cửa hàng -- 
@@ -1592,7 +1700,8 @@ ALTER PROC sp_GetOrderWaitPickupByShopID
     @FK_iShopID INT
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
@@ -1609,7 +1718,7 @@ ALTER PROC sp_GetOrderWaitPickupByShippingOrderID
     @PK_iShippingOrderID INT
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, tbl_ShippingOrders.FK_iOrderStatusID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
     INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
@@ -1623,11 +1732,12 @@ EXEC sp_GetOrderWaitPickupByShippingOrderID 8
 GO
 
 -- Thủ tục lấy đơn hàng ở trạng thái chờ xác nhận với mã đơn hàng -- 
-CREATE PROC sp_GetOrderWaitSettlementByOrderID
+ALTER PROC sp_GetOrderWaitSettlementByOrderID
     @PK_iOrderID INT
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
@@ -1644,7 +1754,8 @@ ALTER PROC sp_GetOrderWaitDeliveryByOrderID
     @PK_iOrderID INT
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
@@ -1661,14 +1772,14 @@ ALTER PROC sp_GetOrderProcessedByShopID
     @FK_iShopID INT
 AS
 BEGIN
-    SELECT PK_iOrderID, tbl_Users.PK_iUserID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName FROM tbl_Orders
+    SELECT PK_iOrderID, tbl_Orders.FK_iUserID, FK_iOrderStatusID, FK_iPaymentTypeID, FK_iShopID, tbl_Users_Info.sFullName, tbl_Stores.sStoreName, dDate, fTotalPrice, tbl_Order_Status.sOrderStatusName, tbl_Payments.sPaymentName
+    FROM tbl_Orders 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Orders.FK_iShopID
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Orders.FK_iUserID
     INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
     INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
     INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
-    INNER JOIN tbl_ShippingOrders ON tbl_ShippingOrders.FK_iOrderID = tbl_Orders.PK_iOrderID
     WHERE PK_iStoreID = @FK_iShopID AND tbl_Order_Status.iOrderStatusCode = 2
 END
 -- Đổi tên
@@ -1888,7 +1999,7 @@ SELECT * FROM tbl_Orders
 GO
 
 -- Thủ tục lấy chi tiết đơn hàng theo mã ở trạng thái chờ xác nhận --
-ALTER PROC sp_GetOrderDetailWaitSettlementByOrderID
+ALTER PROC sp_GetOrderDetailByOrderID
     @PK_iOrderID INT
 AS
 BEGIN
@@ -1900,11 +2011,11 @@ BEGIN
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
     INNER JOIN tbl_Orders ON tbl_Orders.PK_iOrderID = tbl_OrderDetails.PK_iOrderID 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
-    WHERE tbl_Orders.PK_iOrderID = @PK_iOrderID AND tbl_Order_Status.iOrderStatusCode = 0
+    WHERE tbl_Orders.PK_iOrderID = @PK_iOrderID
 END
 -- Đổi tên
-EXEC sp_rename 'sp_GetOrderWaitSettlementByOrderID', 'sp_GetOrderDetailWaitSettlementByOrderID'
-EXEC sp_GetOrderWaitSettlementByOrderID 2
+EXEC sp_rename 'sp_GetOrderDetailWaitSettlementByOrderID', 'sp_GetOrderDetailByOrderID'
+EXEC sp_GetOrderDetailByOrderID 2
 GO
 
 -- Thủ tục lấy chi tiết đơn hàng theo mã ở trạng thái chờ lấy hàng --
@@ -2052,9 +2163,9 @@ BEGIN
     INNER JOIN tbl_PaymentsType ON tbl_PaymentsType.PK_iPaymentTypeID = tbl_Orders.FK_iPaymentTypeID
     INNER JOIN tbl_Payments ON tbl_Payments.PK_iPaymentID = tbl_PaymentsType.FK_iPaymentID
     INNER JOIN tbl_ShippingUnits ON tbl_ShippingUnits.PK_iShippingUnitID = tbl_ShippingOrders.FK_iShippingUnitID
-    WHERE FK_iOrderID = @FK_iOrderID AND tbl_Order_Status.iOrderStatusCode = 4
+    WHERE FK_iOrderID = @FK_iOrderID
 END
-EXEC sp_GetShippingOrderByOrderID 1006
+EXEC sp_GetShippingOrderByOrderID 1005
 GO
 
 -- Thủ tục lấy đơn hàng giao theo mã  -- 
