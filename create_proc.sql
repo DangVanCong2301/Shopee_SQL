@@ -404,8 +404,62 @@ BEGIN
     GROUP BY PK_iParentCategoryID, sParentCategoryName, sParentCategoryImage
 END
 EXEC sp_SelectParentCategories
-SELECT * FROM tbl_Categories 
-INNER JOIN tbl_Categories ON tbl_Categories.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
+GO
+
+-- Thủ tục lấy tất cả ngành hàng --
+CREATE PROC sp_GetIndustries
+AS
+BEGIN
+    SELECT PK_iParentCategoryID, sParentCategoryName, sParentCategoryImage, dCreateTime, dUpdateTime 
+    FROM tbl_Parent_Categories
+END
+EXEC sp_GetIndustries
+GO
+
+-- Thủ tục lấy ngành hàng theo mã --
+CREATE PROC sp_GetIndustryByID
+    @PK_iIndustryID INT
+AS
+BEGIN
+    SELECT PK_iParentCategoryID, sParentCategoryName, sParentCategoryImage, dCreateTime, dUpdateTime 
+    FROM tbl_Parent_Categories
+    WHERE PK_iParentCategoryID = @PK_iIndustryID
+END
+EXEC sp_GetIndustryByID 1
+GO
+
+-- Thủ tục thêm ngành hàng --
+ALTER PROC sp_InsertIndustry
+    @sIndustryName NVARCHAR(100),
+    @sIndustryImage NVARCHAR(100),
+    @dCreateTime DATETIME,
+    @dUpdateTime DATETIME
+AS
+BEGIN
+    INSERT INTO tbl_Parent_Categories (sParentCategoryName, sParentCategoryImage, dCreateTime, dUpdateTime) VALUES (@sIndustryName, @sIndustryImage, @dCreateTime, @dUpdateTime)
+END
+GO
+
+-- Thủ tục cập nhật ngành hàng --
+CREATE PROC sp_UpdateIndustry
+    @PK_iIndustryID INT,
+    @sIndustryName NVARCHAR(100),
+    @sIndustryImage NVARCHAR(100),
+    @dUpdateTime DATETIME
+AS
+BEGIN
+    UPDATE tbl_Parent_Categories SET sParentCategoryName = @sIndustryName, sParentCategoryImage = @sIndustryImage, dUpdateTime = @dUpdateTime 
+    WHERE PK_iParentCategoryID = @PK_iIndustryID
+END
+GO
+
+-- Thủ tục xoá ngành hàng với mã --
+CREATE PROC sp_DeleteIndustryByID
+    @PK_iIndustryID INT
+AS
+BEGIN 
+    DELETE tbl_Parent_Categories WHERE PK_iParentCategoryID = @PK_iIndustryID
+END
 GO
 
 -------------------------------------------------------- CỬA HÀNG - NGÀNH HÀNG -------------------------------------------------------------------------
@@ -427,30 +481,29 @@ SELECT * FROM tbl_Categories
 GO
 
 -- Thủ tục lấy tất cả các thể loại (cả thể loại chưa có sản phẩm)
-CREATE PROC sp_GetAllCategories
+ALTER PROC sp_GetAllCategories
 AS
 BEGIN
-    SELECT PK_iCategoryID, FK_iParentCategoryID, sParentCategoryName, sCategoryName, sCategoryImage, sCategoryDescription
+    SELECT PK_iCategoryID, FK_iParentCategoryID, sParentCategoryName, sCategoryName, sCategoryImage, sCategoryDescription, tbl_Categories.dCreateTime, tbl_Categories.dUpdateTime
     FROM tbl_Categories 
     INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
 END
 EXEC sp_GetAllCategories
 GO
 
--- Thủ tục lấy tất cả các thể loại theo mã cửa hàng (thể loại có sản phẩm)
+-- Thủ tục lấy tất cả các thể loại theo mã cửa hàng
 ALTER PROC sp_GetAllCategoriesByShopID
     @FK_iShopID INT
 AS
 BEGIN
-    SELECT PK_iCategoryID, FK_iParentCategoryID, sParentCategoryName, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount', sCategoryDescription
+    SELECT PK_iCategoryID, FK_iParentCategoryID, sParentCategoryName, sCategoryName, sCategoryImage, sCategoryDescription, tbl_Categories.dCreateTime, tbl_Categories.dUpdateTime
     FROM tbl_Categories 
     INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Products.FK_iStoreID
     WHERE tbl_Stores.PK_iStoreID = @FK_iShopID
-    GROUP BY PK_iCategoryID, tbl_Categories.FK_iParentCategoryID, sParentCategoryName, sCategoryName, sCategoryImage, sCategoryDescription 
 END
-EXEC sp_GetAllCategoriesByShopID 5
+EXEC sp_GetAllCategoriesByShopID 1
 GO
 
 -- Thủ tục lấy danh mục theo mã danh mục cha --
@@ -483,6 +536,19 @@ BEGIN
     GROUP BY PK_iCategoryID, sCategoryName, sCategoryImage, sCategoryDescription 
 END
 EXEC sp_GetCategoriesByShopID 5
+GO
+
+-- Thủ tục lấy danh mục theo mã ngành hàng --
+ALTER PROC sp_GetCategoriesByIndustryID
+    @FK_iIndustryID INT
+AS
+BEGIN
+    SELECT PK_iCategoryID, FK_iParentCategoryID, sParentCategoryName, sCategoryName, sCategoryImage, sCategoryDescription, tbl_Categories.dCreateTime, tbl_Categories.dUpdateTime
+    FROM tbl_Categories
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    WHERE FK_iParentCategoryID = @FK_iIndustryID
+END
+EXEC sp_GetCategoriesByIndustryID 4
 GO
 
 -- Thủ tục thêm danh mục --
