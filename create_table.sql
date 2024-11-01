@@ -130,6 +130,8 @@ CREATE TABLE tbl_Parent_Categories (
     sParentCategoryImage NVARCHAR(100)
 )
 GO
+ALTER TABLE tbl_Parent_Categories ADD dCreateTime DATETIME
+ALTER TABLE tbl_Parent_Categories ADD dUpdateTime DATETIME
 
 ------------------------- TẠO BẢNG CỬA HÀNG - NGÀNH HÀNG --------------------------
 CREATE TABLE tbl_StoreIndustries(
@@ -161,6 +163,9 @@ ALTER TABLE tbl_Categories DROP COLUMN FK_iStoreID -- Xoá tên cột
 -- Thêm cột khoá ngoại FK_iParentCategoryID
 ALTER TABLE tbl_Categories ADD FK_iParentCategoryID INT
 ALTER TABLE tbl_Categories ADD CONSTRAINT FK_Categories_ParentCategory FOREIGN KEY (FK_iParentCategoryID) REFERENCES tbl_Parent_Categories (PK_iParentCategoryID)
+
+ALTER TABLE tbl_Categories ADD dCreateTime DATETIME
+ALTER TABLE tbl_Categories ADD dUpdateTime DATETIME
 
 -- Đổi tên bảng: https://freetuts.net/doi-ten-table-trong-sql-server-1590.html
 
