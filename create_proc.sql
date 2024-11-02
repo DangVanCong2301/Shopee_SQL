@@ -491,6 +491,19 @@ END
 EXEC sp_GetAllCategories
 GO
 
+-- Thủ tục lấy thể loại theo mã --
+ALTER PROC sp_GetCategoryByID
+    @PK_iCategoryID INT
+AS
+BEGIN
+    SELECT PK_iCategoryID, FK_iParentCategoryID, sParentCategoryName, sCategoryName, sCategoryImage, sCategoryDescription, tbl_Categories.dCreateTime, tbl_Categories.dUpdateTime
+    FROM tbl_Categories 
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    WHERE PK_iCategoryID = @PK_iCategoryID
+END
+EXEC sp_GetCategoryByID 1
+GO
+
 -- Thủ tục lấy tất cả các thể loại theo mã cửa hàng
 ALTER PROC sp_GetAllCategoriesByShopID
     @FK_iShopID INT
@@ -585,14 +598,22 @@ END
 go
 
 -- Thủ tục cập nhật danh mục--
-CREATE PROC sp_UpdateCategoryByID
+ALTER PROC sp_UpdateCategoryByID
     @PK_iCategoryID INT,
-     @sCategoryName NVARCHAR(100),
+    @FK_iParentCategoryID INT,
+    @sCategoryName NVARCHAR(100),
     @sCategoryImage NVARCHAR(100),
-    @sCategoryDescription NVARCHAR(MAX)
+    @sCategoryDescription NVARCHAR(MAX),
+    @dUpdateTime DATETIME
 AS
 BEGIN
-    UPDATE tbl_Categories SET sCategoryName = @sCategoryName, sCategoryImage = @sCategoryImage, sCategoryDescription = @sCategoryDescription where PK_iCategoryID = @PK_iCategoryID
+    UPDATE tbl_Categories SET 
+    FK_iParentCategoryID = @FK_iParentCategoryID, 
+    sCategoryName = @sCategoryName, 
+    sCategoryImage = @sCategoryImage, 
+    sCategoryDescription = @sCategoryDescription,
+    dUpdateTime = @dUpdateTime
+    WHERE PK_iCategoryID = @PK_iCategoryID
 END
 GO
 
