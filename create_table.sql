@@ -404,3 +404,15 @@ ALTER TABLE tbl_ShippingDeliveries ADD sDeliverName NVARCHAR(100)
 -- Thêm cột trạng thái đơn hàng -- 
 ALTER TABLE tbl_ShippingDeliveries ADD FK_iOrderStatusID INT
 ALTER TABLE tbl_ShippingDeliveries ADD CONSTRAINT FK_ShippingDeliveries_OrderStatus FOREIGN KEY (FK_iOrderStatusID) REFERENCES tbl_Order_Status (PK_iOrderStatusID)
+
+------------------------- TẠO BẢNG THÔNG BÁO KẾT BẠN --------------------------
+CREATE TABLE tbl_MakeNoticies (
+    PK_iMakeNotice INT IDENTITY (1, 1) NOT NULL PRIMARY KEY,
+    FK_iUserID INT,
+    FK_iSellerID INT,
+    dTime DATETIME
+    CONSTRAINT FK_MakeNoticies_Users FOREIGN KEY (FK_iUserID) REFERENCES tbl_Users(PK_iUserID),
+    CONSTRAINT FK_MakeNoticies_Sellers FOREIGN KEY (FK_iSellerID) REFERENCES tbl_Sellers(PK_iSellerID)
+)
+GO
+EXEC sp_rename 'tbl_MakeNoticies.PK_iMakeNotice', 'PK_iMakeNoticeID', 'COLUMN'; -- Đổi tên cột trong 1 bảng
