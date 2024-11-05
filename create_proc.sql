@@ -383,6 +383,32 @@ END
 EXEC sp_GetShopBySellerID 3
 GO
 
+-------------------------------------------------------- THÔNG BÁO KẾT BẠN -------------------------------------------------------------------------
+-- Thủ tục tạo lời mời kết bạn
+CREATE PROC sp_InsertMakeNoice
+    @FK_iUserID INT,
+    @FK_iSellerID INT,
+    @dTime DATETIME
+AS
+BEGIN
+    INSERT INTO tbl_MakeNoticies (FK_iUserID, FK_iSellerID, dTime) VALUES (@FK_iUserID, @FK_iSellerID, @dTime)
+END
+GO
+
+-- Thủ tục lấy thông báo kết bạn với mã tài khoản, mã mã cửa hàng --
+ALTER PROC sp_GetMakeNoticeByUserIDAndShopID
+    @FK_iUserID INT,
+    @FK_iShopID INT
+AS
+BEGIN
+    SELECT PK_iMakeNoticeID, FK_iUserID, tbl_MakeNoticies.FK_iSellerID, dTime FROM tbl_MakeNoticies
+    INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_MakeNoticies.FK_iSellerID
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
+    WHERE tbl_MakeNoticies.FK_iUserID = @FK_iUserID AND tbl_Stores.PK_iStoreID = @FK_iShopID
+END
+EXEC sp_GetMakeNoticeByUserIDAndShopID 1, 5
+GO
+
 -------------------------------------------------------- BANNER - SLIDER CỬA HÀNG -------------------------------------------------------------------------
 -- Lấy Slider theo mã cửa hàng --
 ALTER PROC sp_GetBannersShopByShopID
@@ -430,6 +456,21 @@ END
 EXEC sp_GetIndustryByID 1
 GO
 
+-- Thủ tục tìm kiếm ngành hàng (chỉ những ngành hàng đã có danh mục + sản phâm) --
+CREATE PROC sp_SearchParentCategoriesByKeyword
+    @sKeyword NVARCHAR(100)
+AS
+BEGIN
+    SELECT PK_iParentCategoryID, sParentCategoryName, sParentCategoryImage, COUNT(tbl_Categories.PK_iCategoryID) as 'iCategoryCount', COUNT(tbl_Products.PK_iProductID) as 'iProductCount'
+    FROM tbl_Parent_Categories 
+    INNER JOIN tbl_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+    WHERE sParentCategoryName LIKE N'%' + @sKeyword + '%'
+    GROUP BY PK_iParentCategoryID, sParentCategoryName, sParentCategoryImage
+END
+EXEC sp_SearchParentCategoriesByKeyword N'S'
+GO
+
 -- Thủ tục thêm ngành hàng --
 ALTER PROC sp_InsertIndustry
     @sIndustryName NVARCHAR(100),
@@ -473,10 +514,11 @@ GO
 ALTER PROC sp_SelectCategories
 AS
 BEGIN
-    SELECT PK_iCategoryID, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount', sCategoryDescription
+    SELECT PK_iCategoryID, FK_iParentCategoryID, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount', sCategoryDescription
     FROM tbl_Categories 
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
     INNER JOIN tbl_Products ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
-    GROUP BY PK_iCategoryID, sCategoryName, sCategoryImage, sCategoryDescription
+    GROUP BY PK_iCategoryID, FK_iParentCategoryID, sCategoryName, sCategoryImage, sCategoryDescription
 END
 EXEC sp_SelectCategories
 SELECT * FROM tbl_Categories
@@ -526,7 +568,7 @@ ALTER PROC sp_SelectCategoriesByParentCategoryID
     @FK_iParentCategoryID INT
 AS
 BEGIN
-    SELECT PK_iCategoryID, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount', sCategoryDescription
+    SELECT PK_iCategoryID, FK_iParentCategoryID, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount', sCategoryDescription
     FROM tbl_Categories 
     INNER JOIN tbl_Parent_Categories ON tbl_Categories.FK_iParentCategoryID = tbl_Parent_Categories.PK_iParentCategoryID
     INNER JOIN tbl_Products ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
@@ -542,13 +584,13 @@ ALTER PROC sp_GetCategoriesByShopID
     @PK_iShopID INT
 AS
 BEGIN
-    SELECT PK_iCategoryID, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount', sCategoryDescription
+    SELECT PK_iCategoryID, FK_iParentCategoryID, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount', sCategoryDescription
     FROM tbl_Categories
     INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
     INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Products.FK_iStoreID
     WHERE PK_iStoreID = @PK_iShopID
-    GROUP BY PK_iCategoryID, sCategoryName, sCategoryImage, sCategoryDescription 
+    GROUP BY PK_iCategoryID, FK_iParentCategoryID, sCategoryName, sCategoryImage, sCategoryDescription 
 END
 EXEC sp_GetCategoriesByShopID 5
 GO
@@ -693,14 +735,16 @@ EXEC sp_SelectCategories
 GO
 
 -- Thủ tục tìm sản phẩm bằng từ khoá
-CREATE PROC sp_SearchCategoryByKeyword
+ALTER PROC sp_SearchCategoryByKeyword
     @sKeyword NVARCHAR(100)
 AS
 BEGIN
-    SELECT PK_iCategoryID, sCategoryName, sCategoryImage, COUNT(tbl_Products.PK_iProductID) as 'iProductCount' 
-    FROM tbl_Categories INNER JOIN tbl_Products ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    SELECT PK_iCategoryID, FK_iParentCategoryID, sCategoryName, sCategoryImage, sCategoryDescription , COUNT(tbl_Products.PK_iProductID) as 'iProductCount' 
+    FROM tbl_Categories 
+    INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Products ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
     WHERE sCategoryName LIKE N'%' + @sKeyword + '%'
-    GROUP BY PK_iCategoryID, sCategoryName, sCategoryImage
+    GROUP BY PK_iCategoryID, FK_iParentCategoryID, sCategoryName, sCategoryImage, sCategoryDescription
 END
 EXEC sp_SearchCategoryByKeyword N'T'
 GO
@@ -844,6 +888,24 @@ BEGIN
     WHERE sCategoryName LIKE N'%' + @sKeyword +  '%' OR sProductName LIKE N'%' + @sKeyword  + '%'
 END
 EXEC sp_SearchProductsByKeyword 'Tai nghe Xiaomi Mi Basic'
+GO
+
+-- Thủ tục tìm kiếm sản phẩm theo mã danh mục hoặc tên sản phẩm theo mã cửa hàng --
+ALTER PROC sp_SearchProductsByKeywordAndShopID
+    @FK_iStoreID INT,
+    @sKeyword NVARCHAR(100)
+AS
+BEGIN
+    SELECT PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice 
+    FROM tbl_Products 
+    INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Products.FK_iStoreID
+    INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
+    WHERE sCategoryName LIKE N'%' + @sKeyword +  '%' OR sProductName LIKE N'%' + @sKeyword  + '%' AND FK_iStoreID = @FK_iStoreID
+END
+EXEC sp_SearchProductsByKeywordAndShopID 5, 'c'
 GO
 
 -- Thủ tục lấy sản phẩm theo mã (ID)--
