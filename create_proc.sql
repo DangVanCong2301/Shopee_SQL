@@ -418,7 +418,7 @@ EXEC sp_rename 'sp_GetMakeNoticeByUserIDAndShopID', 'sp_GetMakeFriendByUserIDAnd
 EXEC sp_GetMakeFriendByUserIDAndShopID 1, 5
 GO
 
--- Thủ tục lấy thông báo kết bạn với mã tài khoản người bán trạng thái gửi kết bạn --
+-- Thủ tục lấy kết bạn với mã tài khoản người bán trạng thái gửi kết bạn --
 ALTER PROC sp_GetMakeFriendBySellerID
     @FK_iSellerID INT
 AS
@@ -436,6 +436,23 @@ EXEC sp_rename 'sp_GetMakeNoticeBySellerID', 'sp_GetMakeFriendBySellerID'
 EXEC sp_GetMakeFriendBySellerID 6
 GO
 
+-- Thủ tục lấy kết bạn với mã tài khoản người mua --
+CREATE PROC sp_GetMakeFriendByUserID
+    @FK_iUserID INT
+AS
+BEGIN
+    SELECT PK_iMakeFriendID, tbl_MakeFriends.FK_iUserID, tbl_MakeFriends.FK_iSellerID, FK_iMakeStatusID, sUserName, sImageProfile, iMakeStatusCode, sMakeStatusName,  dTime 
+    FROM tbl_MakeFriends
+    INNER JOIN tbl_MakeStatus ON tbl_MakeStatus.PK_iMakeStatusID = tbl_MakeFriends.FK_iMakeStatusID
+    INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_MakeFriends.FK_iSellerID
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_MakeFriends.FK_iUserID
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    WHERE tbl_MakeFriends.FK_iUserID = @FK_iUserID AND iMakeStatusCode = 1
+END
+EXEC sp_GetMakeFriendByUserID 1
+GO
+
 -- Thủ tục cập nhật kết bạn về trạng thái chấp nhận kết bạn --
 CREATE PROC sp_UpdateMakeFriendAboutAcept
     @PK_iMakeFriendID INT
@@ -447,25 +464,26 @@ GO
 
 -------------------------------------------------------- TRÒ CHUYỆN --------------------------------------------------------
 ALTER PROC sp_InsertChat
-    @PK_iMakeFriendID INT,
-    @iChatPersonID INT,
-    @sChat NVARCHAR(MAX),
+    @FK_iMakeFriendID INT,
+    @sLastChat NVARCHAR(MAX),
+    @iIsRead INT,
     @dTime DATETIME
 AS
 BEGIN
-    INSERT INTO tbl_Chats (PK_iMakeFriendID, iChatPersonID, sChat, dTime) VALUES (@PK_iMakeFriendID, @iChatPersonID, @sChat, @dTime)
+    INSERT INTO tbl_Chats (FK_iMakeFriendID, sLastChat, iIsRead, dTime) VALUES (@FK_iMakeFriendID, @sLastChat, @iIsRead, @dTime)
 END
 GO
 
 -- Thủ tục lấy cuộc trò chuyện với mã tài khoản --
-CREATE PROC sp_GetChatByUserID
+ALTER PROC sp_GetChatByUserID
     @FK_iUserID INT
 AS
 BEGIN
-    SELECT tbl_Chats.PK_iMakeFriendID, FK_iUserID, tbl_MakeFriends.FK_iSellerID, iChatPersonID, sChat, tbl_Chats.dTime, sStoreName, sImageAvatar
+    SELECT PK_iChatID, tbl_Chats.FK_iMakeFriendID, tbl_MakeFriends.FK_iUserID, tbl_MakeFriends.FK_iSellerID, sLastChat, tbl_Chats.dTime, sStoreName, sImageAvatar, sUserName, sImageProfile
     FROM tbl_Chats
-    INNER JOIN tbl_MakeFriends ON tbl_MakeFriends.PK_iMakeFriendID = tbl_Chats.PK_iMakeFriendID
+    INNER JOIN tbl_MakeFriends ON tbl_MakeFriends.PK_iMakeFriendID = tbl_Chats.FK_iMakeFriendID
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_MakeFriends.FK_iUserID 
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
     INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_MakeFriends.FK_iSellerID 
     INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
     WHERE tbl_MakeFriends.FK_iUserID = @FK_iUserID
@@ -473,6 +491,50 @@ END
 EXEC sp_GetChatByUserID 1
 GO
 
+-- Thủ tục lấy cuộc trò chuyện với mã tài khoản người bán --
+ALTER PROC sp_GetChatBySellerID
+    @FK_iSellerID INT
+AS
+BEGIN
+    SELECT PK_iChatID, tbl_Chats.FK_iMakeFriendID, tbl_MakeFriends.FK_iUserID, tbl_MakeFriends.FK_iSellerID, sLastChat, tbl_Chats.dTime, sStoreName, sImageAvatar, sUserName, sImageProfile
+    FROM tbl_Chats
+    INNER JOIN tbl_MakeFriends ON tbl_MakeFriends.PK_iMakeFriendID = tbl_Chats.FK_iMakeFriendID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_MakeFriends.FK_iUserID 
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_MakeFriends.FK_iSellerID 
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
+    WHERE tbl_MakeFriends.FK_iSellerID = @FK_iSellerID
+END
+EXEC sp_GetChatBySellerID 6
+GO
+
+-- Thủ tục lấy cuộc trò chuyện với mã kết ban --
+CREATE PROC sp_GetChatByMakeFriendID
+    @FK_iMakeFriendID INT
+AS
+BEGIN
+    SELECT PK_iChatID, tbl_Chats.FK_iMakeFriendID, FK_iUserID, tbl_MakeFriends.FK_iSellerID, sLastChat, tbl_Chats.dTime, sStoreName, sImageAvatar
+    FROM tbl_Chats
+    INNER JOIN tbl_MakeFriends ON tbl_MakeFriends.PK_iMakeFriendID = tbl_Chats.FK_iMakeFriendID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_MakeFriends.FK_iUserID 
+    INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_MakeFriends.FK_iSellerID 
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
+    WHERE tbl_Chats.FK_iMakeFriendID = @FK_iMakeFriendID
+END
+EXEC sp_GetChatByMakeFriendID 1
+GO
+
+-------------------------------------------------------- CHI TIẾT TRÒ CHUYỆN --------------------------------------------------------
+CREATE PROC sp_InsertChatDetail
+    @PK_iChatID INT,
+    @iChatPersonID INT,
+    @sChat NVARCHAR(MAX),
+    @dTime DATETIME
+AS
+BEGIN
+    INSERT INTO tbl_ChatDetails (PK_iChatID, iChatPersonID, sChat, dTime) VALUES (@PK_iChatID, @iChatPersonID, @sChat, @dTime)
+END
+GO
 -------------------------------------------------------- BANNER - SLIDER CỬA HÀNG -------------------------------------------------------------------------
 -- Lấy Slider theo mã cửa hàng --
 ALTER PROC sp_GetBannersShopByShopID
@@ -846,7 +908,7 @@ BEGIN
     WHERE tbl_Categories.FK_iParentCategoryID = @FK_iParentCategoryID AND tbl_Products.iIsVisible = 1
 END
 SELECT * FROM tbl_Categories
-EXEC sp_SelectProductsByParentCategoryID 3 
+EXEC sp_SelectProductsByParentCategoryID 4
 GO
 
 -- Thủ tục lấy sản phẩm theo mã danh mục (nếu là admin thì sẽ hiện thị tất cả sản phẩm --
@@ -986,7 +1048,7 @@ BEGIN
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     WHERE PK_iProductID = @PK_iProductID
 END
-EXEC sp_SelectProductByID 2
+EXEC sp_SelectProductByID 1
 GO
 
 -----Thủ tục thêm sản phẩm sản phẩm -----
@@ -1187,7 +1249,7 @@ BEGIN
     INNER JOIN tbl_Roles ON tbl_Roles.PK_iRoleID = tbl_Users.FK_iRoleID 
     WHERE PK_iUserID = @PK_iUserID
 END
-EXEC sp_CheckUserLogin 10
+EXEC sp_CheckUserLogin 1
 SELECT * FROM tbl_Users
 GO
 ------------------------------------------------------

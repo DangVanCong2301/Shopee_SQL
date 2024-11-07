@@ -432,11 +432,24 @@ ALTER TABLE tbl_MakeFriends ADD iStatus INT
 
 ------------------------ TẠO BẢNG TRÒ CHUYỆN --------------------------
 CREATE TABLE tbl_Chats (
-    PK_iMakeFriendID INT NOT NULL,
-    iChatPersionID INT,
-    sChat NVARCHAR(MAX),
+    PK_iChatID INT IDENTITY (1, 1) NOT NULL,
+    FK_iMakeFriendID INT,
+    sLastChat NVARCHAR(MAX),
     dTime DATETIME
-    CONSTRAINT FK_Chats_MakeFriends FOREIGN KEY (PK_iMakeFriendID) REFERENCES tbl_MakeFriends (PK_iMakeFriendID)
+    CONSTRAINT PK_Chats PRIMARY KEY (PK_iChatID),
+    CONSTRAINT FK_Chats_MakeFriends FOREIGN KEY (FK_iMakeFriendID) REFERENCES tbl_MakeFriends (PK_iMakeFriendID)
 )
 GO
+ALTER TABLE tbl_Chats ADD iIsRead INT
 EXEC sp_rename 'tbl_Chats.iChatPersionID', 'iChatPersonID', 'COLUMN'; -- Đổi tên cột trong 1 bảng
+
+------------------------ TẠO BẢNG CHI TIẾT TRÒ CHUYỆN --------------------------
+CREATE TABLE tbl_ChatDetails (
+    PK_iChatID INT NOT NULL,
+    iChatPersonID INT,
+    sChat NVARCHAR(MAX),
+    dTime DATETIME
+    CONSTRAINT FK_ChatDetails_Chats FOREIGN KEY (PK_iChatID) REFERENCES tbl_Chats (PK_iChatID)
+)
+GO 
+
