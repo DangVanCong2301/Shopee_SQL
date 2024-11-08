@@ -509,19 +509,37 @@ EXEC sp_GetChatBySellerID 6
 GO
 
 -- Thủ tục lấy cuộc trò chuyện với mã kết ban --
-CREATE PROC sp_GetChatByMakeFriendID
+ALTER PROC sp_GetChatByMakeFriendID
     @FK_iMakeFriendID INT
 AS
 BEGIN
-    SELECT PK_iChatID, tbl_Chats.FK_iMakeFriendID, FK_iUserID, tbl_MakeFriends.FK_iSellerID, sLastChat, tbl_Chats.dTime, sStoreName, sImageAvatar
+    SELECT PK_iChatID, tbl_Chats.FK_iMakeFriendID, tbl_MakeFriends.FK_iUserID, tbl_MakeFriends.FK_iSellerID, sLastChat, tbl_Chats.dTime, sStoreName, sImageAvatar, sUserName, sImageProfile
     FROM tbl_Chats
     INNER JOIN tbl_MakeFriends ON tbl_MakeFriends.PK_iMakeFriendID = tbl_Chats.FK_iMakeFriendID
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_MakeFriends.FK_iUserID 
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
     INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_MakeFriends.FK_iSellerID 
     INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
     WHERE tbl_Chats.FK_iMakeFriendID = @FK_iMakeFriendID
 END
 EXEC sp_GetChatByMakeFriendID 1
+GO
+
+-- Thủ tục lấy cuộc trò chuyện với mã kết ban --
+CREATE PROC sp_GetChatByID
+    @PK_iChatID INT
+AS
+BEGIN
+    SELECT PK_iChatID, tbl_Chats.FK_iMakeFriendID, tbl_MakeFriends.FK_iUserID, tbl_MakeFriends.FK_iSellerID, sLastChat, tbl_Chats.dTime, sStoreName, sImageAvatar, sUserName, sImageProfile
+    FROM tbl_Chats
+    INNER JOIN tbl_MakeFriends ON tbl_MakeFriends.PK_iMakeFriendID = tbl_Chats.FK_iMakeFriendID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_MakeFriends.FK_iUserID 
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_MakeFriends.FK_iSellerID 
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
+    WHERE PK_iChatID = @PK_iChatID
+END
+EXEC sp_GetChatByID 1
 GO
 
 -------------------------------------------------------- CHI TIẾT TRÒ CHUYỆN --------------------------------------------------------
@@ -535,6 +553,25 @@ BEGIN
     INSERT INTO tbl_ChatDetails (PK_iChatID, iChatPersonID, sChat, dTime) VALUES (@PK_iChatID, @iChatPersonID, @sChat, @dTime)
 END
 GO
+
+-- Thủ tục lấy chi tiết cuộc trò chuyển bằng mã --
+ALTER PROC sp_GetChatDetailByID
+    @PK_iChatID INT
+AS
+BEGIN
+    SELECT tbl_ChatDetails.PK_iChatID, tbl_Chats.FK_iMakeFriendID, tbl_MakeFriends.FK_iUserID, tbl_MakeFriends.FK_iSellerID, iChatPersonID, sChat, tbl_ChatDetails.dTime, sStoreName, sImageAvatar, sUserName, sImageProfile
+    FROM tbl_ChatDetails
+    INNER JOIN tbl_Chats ON tbl_Chats.PK_iChatID = tbl_ChatDetails.PK_iChatID
+    INNER JOIN tbl_MakeFriends ON tbl_MakeFriends.PK_iMakeFriendID = tbl_Chats.FK_iMakeFriendID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_MakeFriends.FK_iUserID 
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_MakeFriends.FK_iSellerID 
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
+    WHERE tbl_ChatDetails.PK_iChatID = @PK_iChatID
+END
+EXEC sp_GetChatDetailByID 1
+GO
+
 -------------------------------------------------------- BANNER - SLIDER CỬA HÀNG -------------------------------------------------------------------------
 -- Lấy Slider theo mã cửa hàng --
 ALTER PROC sp_GetBannersShopByShopID
@@ -948,9 +985,13 @@ ALTER PROC sp_SelectProductsByCategoryIDAndSortIncre
     @FK_iCategoryID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
+    SELECT PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice 
+    FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Products.FK_iStoreID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     WHERE FK_iCategoryID = @FK_iCategoryID ORDER BY (dPrice) ASC
 END
 EXEC sp_SelectProductsByCategoryIDAndSortIncre 2
@@ -978,9 +1019,13 @@ ALTER PROC sp_SelectProductsByCategoryIDAndSortReduce
     @FK_iCategoryID INT
 AS
 BEGIN
-    SELECT PK_iProductID, FK_iCategoryID, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount FROM tbl_Products 
+    SELECT PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sStoreName, sProductName, sImageUrl, sProductDescription, dPrice, iQuantity, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, tbl_Products.dCreateTime, tbl_Products.dUpdateTime, sTransportName, dTransportPrice 
+    FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
+	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Products.FK_iStoreID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
+    INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     WHERE FK_iCategoryID = @FK_iCategoryID ORDER BY (dPrice) DESC
 END
 EXEC sp_SelectProductsByCategoryIDAndSortReduce 1
