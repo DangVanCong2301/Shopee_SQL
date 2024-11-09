@@ -10,6 +10,15 @@ END
 EXEC sp_LoginAccountSeller '0347797502', 'jNf5bbOGFps='
 GO
 
+-- Thủ tục lấy tất cả tài khoản người -- 
+CREATE PROC sp_GetSellers
+AS
+BEGIN
+    SELECT PK_iSellerID, sSellerPhone, sSellerUsername, sSellerPassword FROM tbl_Sellers
+END
+EXEC sp_GetSellers 
+GO
+
 -- Thủ tục lấy tài khoản người bán bằng mã -- 
 CREATE PROC sp_GetSellerAccountByID
     @PK_iSellerID INT
@@ -1254,6 +1263,15 @@ EXEC sp_GetReviewerByProductID 46
 GO
 
 -------------------------------------------------------- TÀI KHOẢN -------------------------------------------------------------------------
+-- Thủ tục lấy tất cả tài khoản -- 
+CREATE PROC sp_GetUsers 
+AS
+BEGIN
+    SELECT PK_iUserID, FK_iRoleID, sEmail, dCreateTime, sPassword, sUserName, sName as 'sRoleName', sDescription as 'sRoleDescription' FROM tbl_Users
+    INNER JOIN tbl_Roles ON tbl_Roles.PK_iRoleID = tbl_Users.FK_iRoleID 
+END
+EXEC sp_GetUsers
+GO
 -- Thủ tục kiểm tra xem email tài khoản đã đăng ký hay chưa
 ALTER PROC sp_CheckEmailUserIsRegis
     @sEmail NVARCHAR(100)
