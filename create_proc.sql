@@ -129,6 +129,20 @@ END
 EXEC sp_GetSellerInfoByShippingOrderID 1
 GO
 
+-- Lấy thông tin người bán với số điện thoại và mật khẩu --
+CREATE PROC sp_GetSellerInfoByPhoneAndPassword
+    @sSellerPhone INT,
+    @sSellerPassword NVARCHAR(100)
+AS
+BEGIN
+    SELECT PK_iSellerID, PK_iStoreID, sSellerUsername, sSellerPhone, sStoreName, sSellerAddress FROM tbl_Portals 
+    INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_Portals.FK_iSellerID
+    INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
+    WHERE sSellerPhone = @sSellerPhone AND sSellerPassword = @sSellerPassword
+END
+EXEC sp_GetSellerInfoByPhoneAndPassword '0347797502', 'jNf5bbOGFps='
+GO
+
 -------------------------------------------------------- CỬA HÀNG -------------------------------------------------------------------------
 -- Thủ tục lấy cửa hàng --
 ALTER PROC sp_GetStores
@@ -1398,6 +1412,19 @@ BEGIN
 END
 EXEC sp_GetUserIDAccountByEmail 'vinh@gmail.com'
 GO
+
+-- Thủ tục lấy mã tài khoản với mã và mật khẩu --
+CREATE PROC sp_GetUserByIDAndPassword
+    @PK_iUserID INT,
+    @sPassword NVARCHAR(100)
+AS
+BEGIN
+    SELECT PK_iUserID, FK_iRoleID, sEmail, dCreateTime, sPassword, sUserName, sName as 'sRoleName', sDescription as 'sRoleDescription' FROM tbl_Users
+    INNER JOIN tbl_Roles ON tbl_Roles.PK_iRoleID = tbl_Users.FK_iRoleID 
+    WHERE PK_iUserID = @PK_iUserID AND sPassword = @sPassword
+END
+EXEC sp_GetUserByIDAndPassword 1, 'jNf5bbOGFps='
+GO
 ------------------------------------------------------
 -------------------------------------------------------- THÔNG TIN TÀI KHOẢN -------------------------------------------------------------------------
 --- Thủ tục lấy ra tất cả tài khoản người dùng ---
@@ -1449,6 +1476,23 @@ BEGIN
     WHERE PK_iUserID = @FK_iUserID
 END
 EXEC sp_GetUserInfoByID 7
+GO
+
+--- Thủ tục lấy thông tin tài với email ---
+ALTER PROC sp_GetUserInfoByEmailAndPassword
+    @sEmail NVARCHAR(100),
+    @sPassword NVARCHAR(100)
+AS
+BEGIN
+    SELECT PK_iUserInfoID, FK_iUserID, sDescription, sUserName, sFullName, sEmail, dDateBirth, dUpdateTime, iGender, sImageProfile, iIsLock 
+    FROM tbl_Users_Info
+    INNER JOIN tbl_Users ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+	INNER JOIN tbl_Roles ON tbl_Roles.PK_iRoleID = tbl_Users.FK_iRoleID
+    WHERE sEmail = @sEmail AND sPassword = @sPassword
+END
+-- Đổi tên
+EXEC sp_rename 'sp_GetUserInfoByEmail', 'sp_GetUserInfoByEmailAndPassword'
+EXEC sp_GetUserInfoByEmailAndPassword 'cong@gmail.com', 'blTZtVelANJlvELixLaWGw=='
 GO
 
 -------------------------------------------------------- ĐỊA CHỈ NGƯỜI DÙNG ---------------------------------------------------------------
