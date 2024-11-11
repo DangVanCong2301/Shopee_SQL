@@ -1816,7 +1816,7 @@ AS
 BEGIN
     INSERT INTO tbl_PaymentsType(FK_iPaymentID, iUserID) VALUES (@FK_iPaymentID, @UserID)
 END
-EXEC sp_InsertPaymentsType 1, 2
+EXEC sp_InsertPaymentsType 1, 24
 GO
 
 -- Thủ tục cập nhật phương thức thanh toán 
@@ -2374,7 +2374,8 @@ ALTER PROC sp_GetProductsOrderByUserIDDelivered
     @PK_iUserID INT
 AS  
 BEGIN
-    SELECT tbl_Orders.PK_iOrderID, tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode, tbl_Orders.dDate FROM tbl_OrderDetails
+    SELECT tbl_Orders.PK_iOrderID, tbl_Products.PK_iProductID, tbl_Products.sImageUrl, tbl_Products.sProductName, tbl_Stores.sStoreName, tbl_OrderDetails.iQuantity, tbl_OrderDetails.dUnitPrice, tbl_Discounts.dPerDiscount, tbl_OrderDetails.dMoney, tbl_Transports.dTransportPrice, tbl_Order_Status.iOrderStatusCode, tbl_Orders.dDate 
+    FROM tbl_OrderDetails
     INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_OrderDetails.PK_iProductID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID 
     INNER JOIN tbl_Discounts ON tbl_Discounts.PK_iDiscountID = tbl_Products.FK_iDiscountID
@@ -2382,9 +2383,9 @@ BEGIN
     INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Products.FK_iStoreID
     INNER JOIN tbl_Orders ON tbl_Orders.PK_iOrderID = tbl_OrderDetails.PK_iOrderID 
     INNER JOIN tbl_Order_Status ON tbl_Order_Status.PK_iOrderStatusID = tbl_Orders.FK_iOrderStatusID
-    WHERE tbl_Orders.FK_iUserID = @PK_iUserID AND tbl_Order_Status.iOrderStatusCode = 3 OR tbl_Order_Status.iOrderStatusCode = 14
+    WHERE tbl_Orders.FK_iUserID = @PK_iUserID AND tbl_Order_Status.iOrderStatusCode = 3 --OR tbl_Order_Status.iOrderStatusCode = 14
 END
-EXEC sp_GetProductsOrderByUserIDDelivered 2
+EXEC sp_GetProductsOrderByUserIDDelivered 24
 SELECT * FROM tbl_Order_Status
 SELECT * FROM tbl_Orders
 GO
