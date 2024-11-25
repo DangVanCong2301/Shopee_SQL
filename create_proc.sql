@@ -1188,14 +1188,14 @@ SELECT * FROM tbl_Products
 GO
 
 -- Thủ tục kiểm tra xem sản phẩm có trong giỏ hàng không -- 
-CREATE PROC sp_CheckProductInCart 
+ALTER PROC sp_CheckProductInCart 
     @PK_iProductID INT
 AS  
 BEGIN
-    SELECT tbl_Products.PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, tbl_Products.iQuantity, sStoreName, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, sTransportName, dTransportPrice, dCreateTime, dUpdateTime FROM tbl_Products 
+    SELECT tbl_Products.PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, tbl_Products.iQuantity, sStoreName, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, sTransportName, dTransportPrice, tbl_Products.dCreateTime, tbl_Products.dUpdateTime FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
 	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
-    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Products.FK_iStoreID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     INNER JOIN tbl_CartDetails ON tbl_CartDetails.PK_iProductID = tbl_Products.PK_iProductID
@@ -1205,14 +1205,14 @@ EXEC sp_CheckProductInCart 50
 GO
 
 -- Thủ tục kiểm tra xem sản phẩm có trong đơn hàng không -- 
-CREATE PROC sp_CheckProductInOrder 
+ALTER PROC sp_CheckProductInOrder 
     @PK_iProductID INT
 AS  
 BEGIN
-    SELECT tbl_Products.PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, tbl_Products.iQuantity, sStoreName, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, sTransportName, dTransportPrice, dCreateTime, dUpdateTime FROM tbl_Products 
+    SELECT tbl_Products.PK_iProductID, FK_iStoreID, FK_iParentCategoryID, FK_iCategoryID, FK_iDiscountID, FK_iTransportID, sParentCategoryName, sCategoryName, sProductName, sImageUrl, sProductDescription, dPrice, tbl_Products.iQuantity, sStoreName, tbl_Products.iIsVisible as 'iIsVisible', dPerDiscount, sTransportName, dTransportPrice, tbl_Products.dCreateTime, tbl_Products.dUpdateTime FROM tbl_Products 
     INNER JOIN tbl_Categories ON tbl_Products.FK_iCategoryID = tbl_Categories.PK_iCategoryID
 	INNER JOIN tbl_Parent_Categories ON tbl_Parent_Categories.PK_iParentCategoryID = tbl_Categories.FK_iParentCategoryID
-    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Categories.FK_iStoreID
+    INNER JOIN tbl_Stores ON tbl_Stores.PK_iStoreID = tbl_Products.FK_iStoreID
     INNER JOIN tbl_Discounts ON tbl_Products.FK_iDiscountID = tbl_Discounts.PK_iDiscountID
     INNER JOIN tbl_Transports ON tbl_Transports.PK_iTransportID = tbl_Products.FK_iTransportID
     INNER JOIN tbl_OrderDetails ON tbl_OrderDetails.PK_iProductID = tbl_Products.PK_iProductID
@@ -1231,6 +1231,26 @@ END
 GO
 
 -------------------------------------------------------- YÊU THÍCH SẢN PHẨM -------------------------------------------------------------------------
+-- Thủ tục thêm sản phẩm yêu thích --
+CREATE PROC sp_InsertFavorite
+    @FK_iUserID INT,
+    @FK_iProductID INT
+AS
+BEGIN
+    INSERT INTO tbl_Favorites (FK_iUserID, FK_iProductID, bFavorite) VALUES (@FK_iUserID, @FK_iProductID, 1)
+END
+GO
+
+-- Thủ tục xoá sản phẩm yêu thích --
+CREATE PROC sp_DeleteFavorite
+    @FK_iUserID INT,
+    @FK_iProductID INT
+AS
+BEGIN
+    DELETE tbl_Favorites WHERE FK_iUserID = @FK_iUserID AND FK_iProductID = @FK_iProductID
+END
+GO
+
 -- Thủ tục tạo danh sách sản phẩm yêu thích --
 CREATE PROC sp_SelectProductFavorites
     @FK_iUserID INT
@@ -1242,6 +1262,35 @@ BEGIN
     INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = @FK_iUserID
 END
 EXEC sp_SelectProductFavorites 10
+GO
+
+-- Thủ tục lấy yêu thích sản phẩm với mã sản phẩm --
+ALTER PROC sp_GetFavoritesByProductID
+    @FK_iProductID INT
+AS
+BEGIN
+    SELECT PK_iFavoriteID, FK_iProductID, FK_iUserID, bFavorite
+    FROM tbl_Favorites
+    INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_Favorites.FK_iProductID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Favorites.FK_iUserID
+    WHERE FK_iProductID = @FK_iProductID
+END
+EXEC sp_GetFavoritesByProductID 2
+GO
+
+-- Thủ tục lấy yêu thích sản phẩm với mã sản phẩm, mã tài khoản --
+CREATE PROC sp_GetFavoritesByProductIDAndUserID
+    @FK_iProductID INT,
+    @FK_iUserID INT
+AS
+BEGIN
+    SELECT PK_iFavoriteID, FK_iProductID, FK_iUserID, bFavorite
+    FROM tbl_Favorites
+    INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_Favorites.FK_iProductID
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Favorites.FK_iUserID
+    WHERE FK_iProductID = @FK_iProductID AND FK_iUserID = @FK_iUserID
+END
+EXEC sp_GetFavoritesByProductIDAndUserID 2, 10
 GO
 
 -------------------------------------------------------- BÌNH LUÂN, ĐÁNH GIÁ SẢN PHẨM ------------------------------------------------------
