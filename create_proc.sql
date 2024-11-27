@@ -591,6 +591,7 @@ BEGIN
     INNER JOIN tbl_Sellers ON tbl_Sellers.PK_iSellerID = tbl_MakeFriends.FK_iSellerID 
     INNER JOIN tbl_Stores ON tbl_Stores.FK_iSellerID = tbl_Sellers.PK_iSellerID
     WHERE tbl_ChatDetails.PK_iChatID = @PK_iChatID
+    ORDER BY (dTime)
 END
 EXEC sp_GetChatDetailByID 1
 GO
@@ -1323,6 +1324,45 @@ BEGIN
     WHERE FK_iProductID = @FK_iProductID
 END
 EXEC sp_GetReviewerByProductID 46
+GO
+
+-- Thủ tục lấy đánh giá bình luận theo mã đánh giá -- 
+CREATE PROC sp_GetReviewerByID
+    @PK_iReviewerID INT
+AS
+BEGIN
+    SELECT PK_iReviewID, tbl_Reviewers.FK_iUserID, FK_iProductID, sUserName, sImageProfile,  sCategoryName, iStars, sComment, tbl_Reviewers.dCreateTime, tbl_Reviewers.dUpdateTime, sReviewerImage FROM tbl_Reviewers 
+    INNER JOIN tbl_Users ON tbl_Users.PK_iUserID = tbl_Reviewers.FK_iUserID 
+    INNER JOIN tbl_Users_Info ON tbl_Users_Info.FK_iUserID = tbl_Users.PK_iUserID
+    INNER JOIN tbl_Products ON tbl_Products.PK_iProductID = tbl_Reviewers.FK_iProductID
+    INNER JOIN tbl_Categories ON tbl_Categories.PK_iCategoryID = tbl_Products.FK_iCategoryID
+    WHERE PK_iReviewID = @PK_iReviewerID
+END
+EXEC sp_GetReviewerByID 4
+GO
+
+-- Thủ tục cập nhật đánh giá bình luận -- 
+CREATE PROC sp_UpdateReviewer
+    @PK_iReviewerID INT,
+    @FK_iUserID INT,
+    @FK_iProductID INT,
+    @iStar INT,
+    @sComment NVARCHAR(MAX),
+    @dUpdateTime DATETIME,
+    @sReviewerImage NVARCHAR(100)
+AS  
+BEGIN
+    UPDATE tbl_Reviewers SET FK_iUserID = @FK_iUserID, FK_iProductID = @FK_iProductID, iStars = @iStar, sComment = @sComment, dUpdateTime = @dUpdateTime, sReviewerImage = @sReviewerImage WHERE PK_iReviewID = @PK_iReviewerID
+END
+GO
+
+-- Thủ tục xoá đánh giá bình luận -- 
+CREATE PROC sp_DeleteReviewer
+    @PK_iReviewerID INT
+AS
+BEGIN
+    DELETE tbl_Reviewers WHERE PK_iReviewID = @PK_iReviewerID
+END
 GO
 
 -------------------------------------------------------- TÀI KHOẢN -------------------------------------------------------------------------
